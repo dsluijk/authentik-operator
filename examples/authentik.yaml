@@ -1,0 +1,12 @@
+apiVersion: ak.dany.dev/v1
+kind: Authentik
+metadata:
+  name: auth
+spec:
+  postgres:
+    host: postgres
+    name: authentik
+    username: authentik
+    password: authentik
+  redis:
+    host: redis
