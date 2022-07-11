@@ -33,6 +33,7 @@ tonic = { version = "0.7.2", optional = true }
 thiserror = "1.0.31"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.14", features = ["json", "env-filter"] }
+rand = "0.8.5"
 
 [dependencies.kube]
 features = ["runtime", "client", "derive"]

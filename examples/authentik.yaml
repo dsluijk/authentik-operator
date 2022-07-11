@@ -4,9 +4,10 @@ metadata:
   name: auth
 spec:
   postgres:
-    host: postgres
-    name: authentik
-    username: authentik
-    password: authentik
+    host: postgres-postgresql
+    database: postgres
+    username: postgres
+    passwordSecret: postgres-postgresql
+    passwordSecretKey: postgres-password
   redis:
-    host: redis
+    host: redis-master

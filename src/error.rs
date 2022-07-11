@@ -9,6 +9,10 @@ pub enum ReconcileError {
     SerializationError(#[from] serde_json::Error),
     #[error("Object `{0}` has no namespace attached")]
     NoNamespace(String),
+    #[error("The provided was invalid: {0}")]
+    InvalidObj(String),
+    #[error("Failed to commit K8S object: {0}")]
+    CommitError(#[from] kube::api::entry::CommitError),
     #[error("An unknown error has occured ({0}). This is likely a bug!")]
     Internal(String),
 }

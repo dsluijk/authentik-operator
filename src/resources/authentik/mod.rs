@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use futures::{future::BoxFuture, FutureExt, StreamExt};
+use k8s_openapi::api::apps::v1::Deployment;
 use kube::{
     api::{Api, ListParams, ResourceExt},
-    runtime::{self, controller::Action, events::Reporter, finalizer},
+    runtime::{self, controller::Action, finalizer},
     Client,
 };
 use tokio::time::Duration;
@@ -21,11 +22,15 @@ pub struct Manager;
 
 impl Manager {
     pub fn new(client: Client) -> BoxFuture<'static, ()> {
-        let reporter: Reporter = "authentik/ak-operator".into();
-        let ctrlr = Controller::new(client.clone(), reporter);
+        let ctrlr = Controller::new(client.clone());
 
         let servers = Api::<crd::Authentik>::all(client.clone());
+        let deploys = Api::<Deployment>::all(client.clone());
         let drainer = runtime::Controller::new(servers, ListParams::default())
+            .owns(
+                deploys,
+                ListParams::default().labels("app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik"),
+            )
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),
@@ -60,6 +65,6 @@ impl Manager {
 
     fn error_policy(error: &ReconcileError) -> Action {
         warn!("reconcile failed: {:?}", error);
-        Action::requeue(Duration::from_secs(5 * 60))
+        Action::requeue(Duration::from_secs(60))
     }
 }
