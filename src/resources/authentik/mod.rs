@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures::{future::BoxFuture, FutureExt, StreamExt};
-use k8s_openapi::api::apps::v1::Deployment;
+use k8s_openapi::api::{apps::v1::Deployment, core::v1::Service, networking::v1::Ingress};
 use kube::{
     api::{Api, ListParams, ResourceExt},
     runtime::{self, controller::Action, finalizer},
@@ -28,11 +28,16 @@ impl Manager {
 
         let servers = Api::<crd::Authentik>::all(client.clone());
         let deploys = Api::<Deployment>::all(client.clone());
+        let services = Api::<Service>::all(client.clone());
+        let ingresses = Api::<Ingress>::all(client.clone());
+        let lp = ListParams::default().labels(
+            "app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik",
+        );
+
         let drainer = runtime::Controller::new(servers, ListParams::default())
-            .owns(
-                deploys,
-                ListParams::default().labels("app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik"),
-            )
+            .owns(deploys, lp.clone())
+            .owns(services, lp.clone())
+            .owns(ingresses, lp.clone())
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),
