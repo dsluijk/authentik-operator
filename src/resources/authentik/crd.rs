@@ -22,6 +22,7 @@ pub struct AuthentikSpec {
     pub image: AuthentikImage,
     #[serde(default)]
     pub footer_links: Vec<AuthentikFooterLink>,
+    pub ingress: Option<AuthentikIngress>,
     pub postgres: AuthentikPostgres,
     pub redis: AuthentikRedis,
     pub smtp: Option<AuthentikSmtp>,
@@ -44,6 +45,36 @@ pub struct AuthentikFooterLink {
     pub name: String,
     #[validate(url)]
     pub href: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthentikIngress {
+    pub class_name: String,
+    pub rules: Vec<AuthentikIngressRule>,
+    pub tls: Option<Vec<AuthentikIngressTLS>>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthentikIngressRule {
+    pub host: Option<String>,
+    pub paths: Vec<AuthentikIngressPath>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthentikIngressPath {
+    pub path: String,
+    #[serde(default = "default_ingress_path_type")]
+    pub path_type: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthentikIngressTLS {
+    pub hosts: Option<Vec<String>>,
+    pub secret_name: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
@@ -117,6 +148,10 @@ fn default_image_tag() -> String {
 
 fn default_image_pullpolicy() -> String {
     "IfNotPresent".to_string()
+}
+
+fn default_ingress_path_type() -> String {
+    "ImplementationSpecific".to_string()
 }
 
 fn default_postgres_port() -> u16 {

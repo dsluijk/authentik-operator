@@ -11,3 +11,10 @@ spec:
     passwordSecretKey: postgres-password
   redis:
     host: redis-master
+  ingress:
+    className: nginx
+    rules:
+      - host: login.example.com
+        paths:
+          - path: "/"
+            pathType: "Prefix"

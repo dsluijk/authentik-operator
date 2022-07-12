@@ -15,6 +15,8 @@ use crate::ReconcileError;
 mod controller;
 pub mod crd;
 mod deployment;
+mod ingress;
+mod service;
 
 use controller::Controller;
 

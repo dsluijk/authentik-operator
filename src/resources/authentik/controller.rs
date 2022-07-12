@@ -12,7 +12,7 @@ use tracing::*;
 
 use crate::ReconcileError;
 
-use super::{crd, deployment};
+use super::{crd, deployment, ingress, service};
 
 pub struct Controller {
     client: Client,
@@ -42,6 +42,8 @@ impl Controller {
 
         // Reconcile all parts.
         deployment::reconcile(&obj, self.client.clone()).await?;
+        service::reconcile(&obj, self.client.clone()).await?;
+        ingress::reconcile(&obj, self.client.clone()).await?;
 
         // Update status of the CRD about the reconcilidation.
         servers
@@ -65,6 +67,8 @@ impl Controller {
     pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action, ReconcileError> {
         // Cleanup all parts.
         deployment::cleanup(obj.as_ref(), self.client.clone()).await?;
+        service::cleanup(obj.as_ref(), self.client.clone()).await?;
+        ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
 
         Ok(Action::await_change())
     }
