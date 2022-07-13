@@ -2,7 +2,10 @@ use anyhow::{anyhow, Result};
 use kube::{Client, ResourceExt};
 
 use crate::akapi::{
-    user::{CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError},
+    user::{
+        CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
+        Find, FindBody,
+    },
     AkApiRoute, AkServer, API_USER, TEMP_AUTH_TOKEN,
 };
 
@@ -42,6 +45,39 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     }
 }
 
-pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
+pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
+    // TODO: discover working auth token.
+    let instance = obj
+        .metadata
+        .name
+        .clone()
+        .ok_or(anyhow!("Missing instance name.".to_string(),))?;
+    let ns = obj
+        .namespace()
+        .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
+
+    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let mut result = Find::send(
+        api,
+        TEMP_AUTH_TOKEN,
+        FindBody {
+            username: Some(API_USER.to_string()),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+    let user = match result.pop() {
+        Some(user) => user,
+        None => {
+            debug!("Operator user does not exist, skipping deleting it.");
+            return Ok(());
+        }
+    };
+
+    let api = AkServer::connect(&instance, &ns, client).await?;
+    DeleteAccount::send(api, TEMP_AUTH_TOKEN, user.pk).await?;
+    debug!("delete operator user.");
+
     Ok(())
 }

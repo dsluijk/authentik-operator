@@ -69,21 +69,16 @@ impl AkServer {
         method: Method,
         uri: &str,
         api_key: &str,
-        body: Option<impl Serialize>,
+        body: impl Serialize,
     ) -> Result<Response<Body>, AKApiError> {
         let req = Request::builder()
             .method(method)
             .uri(uri)
             .header("Connection", "close")
             .header("Host", self.host.as_str())
-            .header("Authorization", format!("Bearer {}", api_key));
-
-        let req = match body {
-            Some(body) => req
-                .header("Content-Type", "application/json")
-                .body(Body::from(serde_json::to_string(&body)?)),
-            None => req.body(Body::empty()),
-        }?;
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .body(Body::from(serde_json::to_string(&body)?))?;
 
         self.sender.send_request(req).await.map_err(|e| e.into())
     }

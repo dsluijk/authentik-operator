@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use crate::error::AKApiError;
 
 mod server;
+pub mod types;
 pub mod user;
 
 pub use server::AkServer;

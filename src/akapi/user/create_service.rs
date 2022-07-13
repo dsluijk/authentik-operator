@@ -26,21 +26,26 @@ impl AkApiRoute for CreateServiceAccount {
                 Method::POST,
                 "/api/v3/core/users/service_account/",
                 api_key,
-                Some(body),
+                body,
             )
             .await?;
 
-        if res.status() == StatusCode::BAD_REQUEST {
-            return Err(Self::Error::ExistsError);
+        match res.status() {
+            StatusCode::OK => {
+                let bytes = hyper::body::to_bytes(res.into_body())
+                    .await
+                    .map_err(AKApiError::StreamError)?;
+                let body: CreateServiceAccountResponse =
+                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+
+                Ok(body)
+            }
+            StatusCode::BAD_REQUEST => Err(Self::Error::ExistsError),
+            code => Err(Self::Error::Unknown(format!(
+                "Invalid status code {}",
+                code
+            ))),
         }
-
-        let bytes = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(AKApiError::StreamError)?;
-        let body: Self::Response =
-            serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
-
-        Ok(body)
     }
 }
 
@@ -62,6 +67,8 @@ pub struct CreateServiceAccountResponse {
 pub enum CreateServiceAccountError {
     #[error("The user probably already exists!")]
     ExistsError,
+    #[error("An unknown error occured ({0}).")]
+    Unknown(String),
     #[error("Failed send HTTP request: {0}")]
     RequestError(#[from] AKApiError),
 }
