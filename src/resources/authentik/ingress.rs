@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use anyhow::{anyhow, Result};
 use k8s_openapi::api::networking::v1::Ingress;
 use kube::{
     api::{DeleteParams, Patch, PatchParams, PostParams},
@@ -7,17 +8,17 @@ use kube::{
 };
 use serde_json::json;
 
-use crate::ReconcileError;
-
 use super::crd;
 
-pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), ReconcileError> {
-    let instance = obj.metadata.name.clone().ok_or(ReconcileError::InvalidObj(
-        "Missing instance name.".to_string(),
-    ))?;
+pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
+    let instance = obj
+        .metadata
+        .name
+        .clone()
+        .ok_or(anyhow!("Missing instance name.".to_string(),))?;
     let ns = obj
         .namespace()
-        .ok_or(ReconcileError::NoNamespace(instance.clone()))?;
+        .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
     let name = format!("authentik-{}", instance);
     let api: Api<Ingress> = Api::namespaced(client, &ns);
     let ingress = api.get_opt(&name).await?;
@@ -45,15 +46,11 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), Recon
     Ok(())
 }
 
-pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<(), ReconcileError> {
+pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(
-    name: String,
-    obj: &crd::Authentik,
-    ing: &crd::AuthentikIngress,
-) -> Result<Ingress, ReconcileError> {
+fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Result<Ingress> {
     let tls = match &ing.tls {
         Some(tls) => tls
             .iter()

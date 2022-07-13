@@ -34,7 +34,10 @@ thiserror = "1.0.31"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.14", features = ["json", "env-filter"] }
 rand = "0.8.5"
+hyper = "0.14.20"
+async-trait = "0.1.56"
+anyhow = "1.0.58"
 
 [dependencies.kube]
-features = ["runtime", "client", "derive"]
+features = ["runtime", "client", "derive", "ws"]
 version = "0.74.0"

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
 use k8s_openapi::api::{apps::v1::Deployment, core::v1::Service, networking::v1::Ingress};
 use kube::{
@@ -8,17 +9,17 @@ use kube::{
     Client,
 };
 use tokio::time::Duration;
-use tracing::*;
-
-use crate::ReconcileError;
 
 mod controller;
 pub mod crd;
 mod deployment;
 mod ingress;
 mod service;
+mod serviceaccount;
 
 use controller::Controller;
+
+use crate::ReconcileError;
 
 pub struct Manager;
 
@@ -43,7 +44,7 @@ impl Manager {
                 move |e, _| Self::error_policy(e),
                 Arc::new(ctrlr),
             )
-            .filter_map(|x| async move { std::result::Result::ok(x) })
+            .filter_map(|x| async move { Result::ok(x) })
             .for_each(|_| futures::future::ready(()))
             .boxed();
 
@@ -57,7 +58,7 @@ impl Manager {
     ) -> Result<Action, ReconcileError> {
         let ns = obj
             .namespace()
-            .expect("Authentik resource should have a namespace.");
+            .ok_or(anyhow!("Authentik resource should have a namespace."))?;
         let servers: Api<crd::Authentik> = Api::namespaced(client, &ns);
 
         finalizer(&servers, "authentik/ak.dany.dev", obj, |event| async {
@@ -65,13 +66,14 @@ impl Manager {
                 finalizer::Event::Apply(server) => controller.reconcile(server).await,
                 finalizer::Event::Cleanup(server) => controller.cleanup(server).await,
             }
+            .map_err(|e| e.into())
         })
         .await
         .map_err(|e| e.into())
     }
 
     fn error_policy(error: &ReconcileError) -> Action {
-        warn!("reconcile failed: {:?}", error);
+        warn!("{}", error);
         Action::requeue(Duration::from_secs(60))
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Service;
 use kube::{
     api::{Patch, PatchParams, PostParams},
@@ -7,17 +8,17 @@ use kube::{
 };
 use serde_json::json;
 
-use crate::ReconcileError;
-
 use super::{crd, deployment};
 
-pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), ReconcileError> {
-    let instance = obj.metadata.name.clone().ok_or(ReconcileError::InvalidObj(
-        "Missing instance name.".to_string(),
-    ))?;
+pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
+    let instance = obj
+        .metadata
+        .name
+        .clone()
+        .ok_or(anyhow!("Missing instance name.".to_string()))?;
     let ns = obj
         .namespace()
-        .ok_or(ReconcileError::NoNamespace(instance.clone()))?;
+        .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     let api: Api<Service> = Api::namespaced(client, &ns);
     if let Some(_) = api.get_opt(&format!("authentik-{}", instance)).await? {
@@ -35,11 +36,11 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), Recon
     Ok(())
 }
 
-pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<(), ReconcileError> {
+pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik) -> Result<Service, ReconcileError> {
+fn build(name: String, obj: &crd::Authentik) -> Result<Service> {
     let service: Service = serde_json::from_value(json!({
         "apiVersion": "v1",
         "kind": "Service",

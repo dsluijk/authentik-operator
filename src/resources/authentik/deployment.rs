@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use anyhow::{anyhow, Result};
 use k8s_openapi::api::{
     apps::v1::Deployment,
     core::v1::{EnvVar, EnvVarSource, SecretKeySelector},
@@ -10,17 +11,19 @@ use kube::{
 };
 use serde_json::json;
 
-use crate::ReconcileError;
+use crate::akapi::TEMP_AUTH_TOKEN;
 
 use super::crd;
 
-pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), ReconcileError> {
-    let instance = obj.metadata.name.clone().ok_or(ReconcileError::InvalidObj(
-        "Missing instance name.".to_string(),
-    ))?;
+pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
+    let instance = obj
+        .metadata
+        .name
+        .clone()
+        .ok_or(anyhow!("Missing instance name.".to_string(),))?;
     let ns = obj
         .namespace()
-        .ok_or(ReconcileError::NoNamespace(instance.clone()))?;
+        .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     let api: Api<Deployment> = Api::namespaced(client, &ns);
     if let Some(_) = api.get_opt(&format!("authentik-{}", instance)).await? {
@@ -38,11 +41,11 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<(), Recon
     Ok(())
 }
 
-pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<(), ReconcileError> {
+pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik) -> Result<Deployment, ReconcileError> {
+fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
     let deployment: Deployment = serde_json::from_value(json!({
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -77,6 +80,30 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Deployment, ReconcileErro
                             "containerPort": 9000,
                             "protocol": "TCP"
                         }],
+                        "startupProbe": {
+                            "failureThreshold": 30,
+                            "periodSeconds": 10,
+                            "httpGet": {
+                                "path": "/-/health/live/",
+                                "port": "http"
+                            }
+                        },
+                        "livenessProbe": {
+                            "failureThreshold": 2,
+                            "periodSeconds": 10,
+                            "httpGet": {
+                                "path": "/-/health/live/",
+                                "port": "http"
+                            }
+                        },
+                        "readinessProbe": {
+                            "failureThreshold": 2,
+                            "periodSeconds": 10,
+                            "httpGet": {
+                                "path": "/-/health/ready/",
+                                "port": "http"
+                            }
+                        },
                         "env": build_env(&obj.spec)
                     }, {
                         "name": format!("authentik-{}-worker", name),
@@ -123,6 +150,11 @@ fn build_env(obj: &crd::AuthentikSpec) -> Vec<EnvVar> {
         EnvVar {
             name: "AUTHENTIK_SECRET_KEY".to_string(),
             value: obj.secret_key.clone(),
+            value_from: None,
+        },
+        EnvVar {
+            name: "AUTHENTIK_BOOTSTRAP_TOKEN".to_string(),
+            value: Some(TEMP_AUTH_TOKEN.to_string()),
             value_from: None,
         },
         EnvVar {

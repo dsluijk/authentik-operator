@@ -1,6 +1,8 @@
+#[macro_use]
+extern crate tracing;
+
 use actix_web::{get, middleware, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use kube::Client;
-use tracing::*;
 use tracing_subscriber::{prelude::*, EnvFilter, Registry};
 
 use akcontroller::resources;

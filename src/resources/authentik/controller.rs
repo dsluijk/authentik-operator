@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::{anyhow, Result};
 use kube::{
     api::{Api, Patch, PatchParams, ResourceExt},
     runtime::controller::Action,
@@ -8,11 +9,8 @@ use kube::{
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde_json::{json, Map};
 use tokio::time::Duration;
-use tracing::*;
 
-use crate::ReconcileError;
-
-use super::{crd, deployment, ingress, service};
+use super::{crd, deployment, ingress, service, serviceaccount};
 
 pub struct Controller {
     client: Client,
@@ -23,12 +21,12 @@ impl Controller {
         Self { client }
     }
 
-    pub async fn reconcile(&self, obj: Arc<crd::Authentik>) -> Result<Action, ReconcileError> {
+    pub async fn reconcile(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
         debug!("Starting reconcilidation of Authentik.");
         let name = obj.name_any();
         let ns = obj
             .namespace()
-            .ok_or(ReconcileError::NoNamespace(obj.name_any()))?;
+            .ok_or(anyhow!("Missing namespace `{}`.", obj.name_any()))?;
         let servers: Api<crd::Authentik> = Api::namespaced(self.client.clone(), &ns);
 
         // Generate any default values.
@@ -44,6 +42,7 @@ impl Controller {
         deployment::reconcile(&obj, self.client.clone()).await?;
         service::reconcile(&obj, self.client.clone()).await?;
         ingress::reconcile(&obj, self.client.clone()).await?;
+        serviceaccount::reconcile(&obj, self.client.clone()).await?;
 
         // Update status of the CRD about the reconcilidation.
         servers
@@ -64,11 +63,12 @@ impl Controller {
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
     }
 
-    pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action, ReconcileError> {
+    pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
         // Cleanup all parts.
         deployment::cleanup(obj.as_ref(), self.client.clone()).await?;
         service::cleanup(obj.as_ref(), self.client.clone()).await?;
         ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
+        serviceaccount::cleanup(obj.as_ref(), self.client.clone()).await?;
 
         Ok(Action::await_change())
     }
@@ -78,7 +78,7 @@ impl Controller {
         obj: &mut crd::Authentik,
         api: &Api<crd::Authentik>,
         name: &str,
-    ) -> Result<bool, ReconcileError> {
+    ) -> Result<bool> {
         let mut values = Map::new();
 
         if obj.spec.secret_key.is_none() {
