@@ -65,10 +65,10 @@ impl Controller {
 
     pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
         // Cleanup all parts.
-        deployment::cleanup(obj.as_ref(), self.client.clone()).await?;
-        service::cleanup(obj.as_ref(), self.client.clone()).await?;
-        ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
         serviceaccount::cleanup(obj.as_ref(), self.client.clone()).await?;
+        ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
+        service::cleanup(obj.as_ref(), self.client.clone()).await?;
+        deployment::cleanup(obj.as_ref(), self.client.clone()).await?;
 
         Ok(Action::await_change())
     }
