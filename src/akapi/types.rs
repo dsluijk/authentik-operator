@@ -22,3 +22,14 @@ pub struct Group {
     pub parent: Option<String>,
     pub users: Vec<usize>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Token {
+    pub pk: String,
+    pub manager: Option<String>,
+    pub identifier: String,
+    pub intent: String,
+    pub user: usize,
+    pub description: String,
+    pub expiring: bool,
+}

@@ -17,6 +17,10 @@ pub fn service_group_name(instance: &str) -> String {
     format!("akOperator {} service group", instance)
 }
 
+pub fn token_identifier_name(instance: &str, purpose: &str) -> String {
+    format!("ak-operator-{}__{}", instance, purpose)
+}
+
 #[async_trait]
 pub trait AkApiRoute {
     type Body;

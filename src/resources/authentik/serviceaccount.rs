@@ -2,7 +2,8 @@ use anyhow::{anyhow, Result};
 use kube::{Client, ResourceExt};
 
 use crate::akapi::{
-    token::{DeleteToken, DeleteTokenError},
+    token::{CreateToken, CreateTokenBody, CreateTokenError, DeleteToken, DeleteTokenError},
+    token_identifier_name,
     user::{
         CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
         DeleteAccountError, Find, FindBody,
@@ -55,10 +56,53 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     match result {
         Ok(_) => {
             debug!("Service account password deleted.");
-            Ok(())
         }
         Err(DeleteTokenError::NotFound) => {
             debug!("The password does not exist, continuing.");
+        }
+        Err(e) => return Err(e.into()),
+    };
+
+    // Get the ID of the service account.
+    let mut users = Find::send(
+        &mut api,
+        TEMP_AUTH_TOKEN,
+        FindBody {
+            username: Some(API_USER.to_string()),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+    let user_id = match users.pop() {
+        Some(user) => user.pk,
+        None => {
+            return Err(anyhow!("The server account was not found!"));
+        }
+    };
+
+    // Create the api token if it does not exist.
+    let result = CreateToken::send(
+        &mut api,
+        TEMP_AUTH_TOKEN,
+        CreateTokenBody {
+            identifier: token_identifier_name(&instance, "operatortoken"),
+            intent: "api".to_string(),
+            user: user_id,
+            description: "Authentication token for the Authentik Operator. Do not delete!"
+                .to_string(),
+            expiring: false,
+        },
+    )
+    .await;
+
+    match result {
+        Ok(_) => {
+            debug!("Token for the service account was created.");
+            Ok(())
+        }
+        Err(CreateTokenError::ExistsError) => {
+            debug!("The token already exists, continuing.");
             Ok(())
         }
         Err(e) => Err(e.into()),
