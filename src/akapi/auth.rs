@@ -44,14 +44,13 @@ async fn get_token_secret(client: Client, ns: &str, instance: &str) -> Result<Op
     let name = format!("ak-{}-api-operatortoken", instance);
 
     if let Some(secret) = api.get_opt(&name).await? {
-        let data = secret
+        let mut data = secret
             .data
             .ok_or(anyhow!("Token secret does not contain any data"))?;
         let token = data
-            .get("token")
+            .remove("token")
             .ok_or(anyhow!("Token secret does not contain a token."))?;
-        // Pretty hacky, but it works?
-        let token_string = serde_json::to_string(token)?;
+        let token_string = String::from_utf8(token.0)?;
 
         Ok(Some(token_string))
     } else {
