@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::{
     core::v1::ServiceAccount,
@@ -11,7 +9,7 @@ use kube::{
 };
 use serde_json::json;
 
-use super::crd;
+use super::{crd, labels};
 
 pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let instance = obj
@@ -88,7 +86,7 @@ fn build_serviceaccount(name: String, obj: &crd::Authentik) -> Result<ServiceAcc
         "kind": "ServiceAccount",
         "metadata": {
             "name": format!("ak-{}", &name),
-            "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string()),
             "ownerReferences": [{
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
@@ -108,7 +106,7 @@ fn build_clusterrole(name: String, obj: &crd::Authentik) -> Result<ClusterRole> 
         "kind": "ClusterRole",
         "metadata": {
             "name": format!("ak-{}", &name),
-            "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string()),
             "ownerReferences": [{
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
@@ -160,7 +158,7 @@ fn build_binding(name: String, obj: &crd::Authentik, ns: &str) -> Result<Cluster
         "kind": "ClusterRoleBinding",
         "metadata": {
             "name": format!("ak-{}", &name),
-            "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string()),
             "ownerReferences": [{
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
@@ -182,26 +180,4 @@ fn build_binding(name: String, obj: &crd::Authentik, ns: &str) -> Result<Cluster
     }))?;
 
     Ok(binding)
-}
-
-fn get_labels(instance: String, version: String) -> BTreeMap<String, String> {
-    let mut labels = get_matching_labels(instance);
-    labels.insert(
-        "app.kubernetes.io/created-by".to_string(),
-        "authentik-operator".to_string(),
-    );
-    labels.insert("app.kubernetes.io/version".to_string(), version);
-
-    labels
-}
-
-pub fn get_matching_labels(instance: String) -> BTreeMap<String, String> {
-    BTreeMap::from([
-        (
-            "app.kubernetes.io/name".to_string(),
-            "authentik".to_string(),
-        ),
-        ("app.kubernetes.io/part-of".to_string(), "ak-ak".to_string()),
-        ("app.kubernetes.io/instance".to_string(), instance),
-    ])
 }

@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
@@ -12,7 +10,7 @@ use crate::akapi::{
     auth::get_valid_token, token::ViewToken, token_identifier_name, AkApiRoute, AkServer,
 };
 
-use super::crd;
+use super::{crd, labels};
 
 pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let instance = obj
@@ -70,7 +68,7 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
         "type": "Opaque",
         "metadata": {
             "name": format!("ak-{}-api-operatortoken", &name),
-            "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "secret".to_string()),
             "ownerReferences": [{
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
@@ -85,26 +83,4 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
     }))?;
 
     Ok(secret)
-}
-
-fn get_labels(instance: String, version: String) -> BTreeMap<String, String> {
-    let mut labels = get_matching_labels(instance);
-    labels.insert(
-        "app.kubernetes.io/created-by".to_string(),
-        "authentik-operator".to_string(),
-    );
-    labels.insert("app.kubernetes.io/version".to_string(), version);
-
-    labels
-}
-
-pub fn get_matching_labels(instance: String) -> BTreeMap<String, String> {
-    BTreeMap::from([
-        (
-            "app.kubernetes.io/name".to_string(),
-            "authentik".to_string(),
-        ),
-        ("app.kubernetes.io/part-of".to_string(), "ak-ak".to_string()),
-        ("app.kubernetes.io/instance".to_string(), instance),
-    ])
 }

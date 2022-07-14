@@ -21,6 +21,7 @@ pub mod crd;
 mod clusteraccount;
 mod deployment;
 mod ingress;
+pub mod labels;
 mod secret;
 mod service;
 mod serviceaccount;

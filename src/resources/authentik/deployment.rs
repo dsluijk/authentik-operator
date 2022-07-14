@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::{
     apps::v1::Deployment,
@@ -13,7 +11,7 @@ use serde_json::json;
 
 use crate::akapi::auth::TEMP_AUTH_TOKEN;
 
-use super::crd;
+use super::{crd, labels};
 
 pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let instance = obj
@@ -25,17 +23,44 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    let api: Api<Deployment> = Api::namespaced(client, &ns);
-    if let Some(_) = api.get_opt(&format!("authentik-{}", instance)).await? {
+    // Create the server deployment.
+    let api: Api<Deployment> = Api::namespaced(client.clone(), &ns);
+    if let Some(_) = api
+        .get_opt(&format!("authentik-{}-server", instance))
+        .await?
+    {
         api.patch(
-            &format!("authentik-{}", instance),
+            &format!("authentik-{}-server", instance),
             &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build(instance.clone(), obj)?),
+            &Patch::Apply(&build_server(instance.clone(), obj)?),
         )
         .await?;
     } else {
-        api.create(&PostParams::default(), &build(instance.clone(), obj)?)
-            .await?;
+        api.create(
+            &PostParams::default(),
+            &build_server(instance.clone(), obj)?,
+        )
+        .await?;
+    }
+
+    // Create the worker deployment.
+    let api: Api<Deployment> = Api::namespaced(client, &ns);
+    if let Some(_) = api
+        .get_opt(&format!("authentik-{}-worker", instance))
+        .await?
+    {
+        api.patch(
+            &format!("authentik-{}-worker", instance),
+            &PatchParams::apply("authentik.ak-operator").force(),
+            &Patch::Apply(&build_worker(instance.clone(), obj)?),
+        )
+        .await?;
+    } else {
+        api.create(
+            &PostParams::default(),
+            &build_worker(instance.clone(), obj)?,
+        )
+        .await?;
     }
 
     Ok(())
@@ -45,13 +70,13 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
+fn build_server(name: String, obj: &crd::Authentik) -> Result<Deployment> {
     let deployment: Deployment = serde_json::from_value(json!({
         "apiVersion": "apps/v1",
         "kind": "Deployment",
         "metadata": {
-            "name": format!("authentik-{}", name.clone()),
-            "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+            "name": format!("authentik-{}-server", name.clone()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "server".to_string()),
             "ownerReferences": [{
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
@@ -63,11 +88,11 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
         "spec": {
             "replicas": 1,
             "selector": {
-                "matchLabels": get_matching_labels(name.clone())
+                "matchLabels": labels::get_matching_labels(name.clone(), "server".to_string())
             },
             "template": {
                 "metadata": {
-                    "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
+                    "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "server".to_string()),
                 },
                 "spec": {
                     "serviceAccountName": format!("ak-{}", name),
@@ -107,7 +132,43 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                             }
                         },
                         "env": build_env(&obj.spec)
-                    }, {
+                    }]
+                }
+            }
+        }
+    }))?;
+
+    Ok(deployment)
+}
+
+fn build_worker(name: String, obj: &crd::Authentik) -> Result<Deployment> {
+    let deployment: Deployment = serde_json::from_value(json!({
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            "name": format!("authentik-{}-worker", name.clone()),
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "worker".to_string()),
+            "ownerReferences": [{
+                "apiVersion": "ak.dany.dev/v1",
+                "kind": "Authentik",
+                "name": name,
+                "uid": obj.uid().expect("Failed to get UID of Authentik."),
+                "controller": true
+            }]
+        },
+        "spec": {
+            "replicas": 1,
+            "selector": {
+                "matchLabels": labels::get_matching_labels(name.clone(), "worker".to_string())
+            },
+            "template": {
+                "metadata": {
+                    "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "worker".to_string()),
+                },
+                "spec": {
+                    "serviceAccountName": format!("ak-{}", name),
+                    "enableServiceLinks": true,
+                    "containers": [{
                         "name": format!("authentik-{}-worker", name),
                         "image": format!("{}:{}", obj.spec.image.repository, obj.spec.image.tag),
                         "imagePullPolicy": obj.spec.image.pull_policy,
@@ -120,28 +181,6 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
     }))?;
 
     Ok(deployment)
-}
-
-fn get_labels(instance: String, version: String) -> BTreeMap<String, String> {
-    let mut labels = get_matching_labels(instance);
-    labels.insert(
-        "app.kubernetes.io/created-by".to_string(),
-        "authentik-operator".to_string(),
-    );
-    labels.insert("app.kubernetes.io/version".to_string(), version);
-
-    labels
-}
-
-pub fn get_matching_labels(instance: String) -> BTreeMap<String, String> {
-    BTreeMap::from([
-        (
-            "app.kubernetes.io/name".to_string(),
-            "authentik".to_string(),
-        ),
-        ("app.kubernetes.io/part-of".to_string(), "ak-ak".to_string()),
-        ("app.kubernetes.io/instance".to_string(), instance),
-    ])
 }
 
 fn build_env(obj: &crd::AuthentikSpec) -> Vec<EnvVar> {

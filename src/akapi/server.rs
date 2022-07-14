@@ -11,7 +11,7 @@ use kube::{
 use rand::prelude::SliceRandom;
 use serde::Serialize;
 
-use crate::AKApiError;
+use crate::{resources::authentik::labels, AKApiError};
 
 #[derive(Debug)]
 pub struct AkServer {
@@ -21,12 +21,11 @@ pub struct AkServer {
 
 impl AkServer {
     pub async fn connect(instance: &str, namespace: &str, client: Client) -> Result<Self> {
-        let label_selectors = vec![
-            "app.kubernetes.io/created-by=authentik-operator".to_string(),
-            "app.kubernetes.io/name=authentik".to_string(),
-            "app.kubernetes.io/part-of=ak-ak".to_string(),
-            format!("app.kubernetes.io/instance={}", instance),
-        ];
+        let label_selectors: Vec<String> =
+            labels::get_matching_labels(instance.to_string(), "server".to_string())
+                .into_iter()
+                .map(|(k, v)| format!("{}={}", k, v))
+                .collect();
 
         // Find a random pod with the selectors of the Deployment.
         let pods_api: Api<Pod> = Api::namespaced(client, namespace);
