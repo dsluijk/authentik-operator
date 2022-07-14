@@ -2,13 +2,14 @@ use anyhow::{anyhow, Result};
 use kube::{Client, ResourceExt};
 
 use crate::akapi::{
+    auth::get_valid_token,
     token::{CreateToken, CreateTokenBody, CreateTokenError, DeleteToken, DeleteTokenError},
     token_identifier_name,
     user::{
         CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
         DeleteAccountError, Find, FindBody,
     },
-    AkApiRoute, AkServer, API_USER, TEMP_AUTH_TOKEN,
+    AkApiRoute, AkServer, API_USER,
 };
 
 use super::crd;
@@ -23,11 +24,14 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    // Attempt to create the account.
+    // Get the API key.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+
+    // Attempt to create the account.
     let result = CreateServiceAccount::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         CreateServiceAccountBody {
             name: API_USER.to_string(),
             create_group: false,
@@ -48,7 +52,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Delete the password token for this account if it exists.
     let result = DeleteToken::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         format!("service-account-{}-password", API_USER),
     )
     .await;
@@ -66,7 +70,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Get the ID of the service account.
     let mut users = Find::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         FindBody {
             username: Some(API_USER.to_string()),
             ..Default::default()
@@ -84,7 +88,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Create the api token if it does not exist.
     let result = CreateToken::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         CreateTokenBody {
             identifier: token_identifier_name(&instance, "operatortoken"),
             intent: "api".to_string(),
@@ -110,7 +114,6 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 }
 
 pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
-    // TODO: discover working auth token.
     let instance = obj
         .metadata
         .name
@@ -120,10 +123,13 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
+    // Get the API key.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+
     let mut result = Find::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         FindBody {
             username: Some(API_USER.to_string()),
             ..Default::default()
@@ -139,7 +145,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         }
     };
 
-    match DeleteAccount::send(&mut api, TEMP_AUTH_TOKEN, user.pk).await {
+    match DeleteAccount::send(&mut api, &api_key, user.pk).await {
         Ok(_) => {
             debug!("Deleted operator user.");
             Ok(())

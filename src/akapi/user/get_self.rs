@@ -2,34 +2,28 @@ use async_trait::async_trait;
 use hyper::{Method, StatusCode};
 use serde::Deserialize;
 use thiserror::Error;
-use urlencoding::encode;
 
 use crate::{
-    akapi::{AkApiRoute, AkServer},
+    akapi::{types::User, AkApiRoute, AkServer},
     error::AKApiError,
 };
 
-pub struct ViewToken;
+pub struct GetSelf;
 
 #[async_trait]
-impl AkApiRoute for ViewToken {
-    type Body = String;
-    type Response = String;
-    type Error = ViewTokenError;
+impl AkApiRoute for GetSelf {
+    type Body = ();
+    type Response = GetSelfResponse;
+    type Error = GetSelfError;
 
     #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
-        ident: Self::Body,
+        body: Self::Body,
     ) -> Result<Self::Response, Self::Error> {
         let res = api
-            .send(
-                Method::GET,
-                format!("/api/v3/core/tokens/{}/view_key/", encode(&ident)).as_str(),
-                api_key,
-                (),
-            )
+            .send(Method::GET, "/api/v3/core/users/me/", api_key, body)
             .await?;
 
         match res.status() {
@@ -37,12 +31,12 @@ impl AkApiRoute for ViewToken {
                 let bytes = hyper::body::to_bytes(res.into_body())
                     .await
                     .map_err(AKApiError::StreamError)?;
-                let body: ViewTokenResponse =
+                let body: GetSelfResponse =
                     serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
 
-                Ok(body.key)
+                Ok(body)
             }
-            StatusCode::NOT_FOUND => Err(Self::Error::NotFound),
+            StatusCode::FORBIDDEN => Err(Self::Error::Forbidden),
             code => Err(Self::Error::Unknown(format!(
                 "Invalid status code {}",
                 code
@@ -52,14 +46,15 @@ impl AkApiRoute for ViewToken {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ViewTokenResponse {
-    pub key: String,
+pub struct GetSelfResponse {
+    pub user: User,
+    pub origional: Option<User>,
 }
 
 #[derive(Error, Debug)]
-pub enum ViewTokenError {
-    #[error("The token was not found.")]
-    NotFound,
+pub enum GetSelfError {
+    #[error("Server denied our authentication.")]
+    Forbidden,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
     #[error(transparent)]

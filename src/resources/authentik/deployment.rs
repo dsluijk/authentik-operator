@@ -11,7 +11,7 @@ use kube::{
 };
 use serde_json::json;
 
-use crate::akapi::TEMP_AUTH_TOKEN;
+use crate::akapi::auth::TEMP_AUTH_TOKEN;
 
 use super::crd;
 

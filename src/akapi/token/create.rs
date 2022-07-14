@@ -16,6 +16,7 @@ impl AkApiRoute for CreateToken {
     type Response = Token;
     type Error = CreateTokenError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -59,6 +60,6 @@ pub enum CreateTokenError {
     ExistsError,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

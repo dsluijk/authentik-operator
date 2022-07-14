@@ -15,6 +15,7 @@ impl AkApiRoute for DeleteAccount {
     type Response = ();
     type Error = DeleteAccountError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -46,6 +47,6 @@ pub enum DeleteAccountError {
     NotFound,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

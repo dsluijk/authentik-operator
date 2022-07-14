@@ -16,6 +16,7 @@ impl AkApiRoute for DeleteToken {
     type Response = ();
     type Error = DeleteTokenError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -47,6 +48,6 @@ pub enum DeleteTokenError {
     NotFound,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

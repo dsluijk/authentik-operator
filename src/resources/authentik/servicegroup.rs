@@ -2,13 +2,14 @@ use anyhow::{anyhow, Result};
 use kube::{Client, ResourceExt};
 
 use crate::akapi::{
+    auth::get_valid_token,
     group::{
         CreateGroup, CreateGroupBody, CreateGroupError, DeleteGroup, DeleteGroupError, FindGroup,
         FindGroupBody,
     },
     service_group_name,
     user::{Find, FindBody},
-    AkApiRoute, AkServer, API_USER, TEMP_AUTH_TOKEN,
+    AkApiRoute, AkServer, API_USER,
 };
 
 use super::crd;
@@ -23,11 +24,14 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    // Check if the group already exists.
+    // Get the API key.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+
+    // Check if the group exists first.
     let groups = FindGroup::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         FindGroupBody {
             name: Some(service_group_name(&instance)),
             ..Default::default()
@@ -43,7 +47,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Get the ID of the service account.
     let mut users = Find::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         FindBody {
             username: Some(API_USER.to_string()),
             ..Default::default()
@@ -61,7 +65,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Create the group.
     let result = CreateGroup::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         CreateGroupBody {
             name: service_group_name(&instance),
             is_superuser: true,
@@ -94,11 +98,14 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    // Find the group ID.
+    // Get the API key.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+
+    // Find the group ID.
     let mut groups = FindGroup::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         FindGroupBody {
             name: Some(service_group_name(&instance)),
             ..Default::default()
@@ -115,7 +122,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     };
 
     // Delete the group.
-    match DeleteGroup::send(&mut api, TEMP_AUTH_TOKEN, group_id).await {
+    match DeleteGroup::send(&mut api, &api_key, group_id).await {
         Ok(_) => {
             debug!("Deleted service group.");
             Ok(())

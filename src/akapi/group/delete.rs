@@ -16,6 +16,7 @@ impl AkApiRoute for DeleteGroup {
     type Response = ();
     type Error = DeleteGroupError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -47,6 +48,6 @@ pub enum DeleteGroupError {
     NotFound,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

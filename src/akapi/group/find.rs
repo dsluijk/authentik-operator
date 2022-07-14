@@ -17,6 +17,7 @@ impl AkApiRoute for FindGroup {
     type Response = Vec<Group>;
     type Error = FindGroupError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -63,6 +64,6 @@ pub struct FindGroupResponse {
 pub enum FindGroupError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

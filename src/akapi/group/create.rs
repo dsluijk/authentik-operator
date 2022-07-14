@@ -16,6 +16,7 @@ impl AkApiRoute for CreateGroup {
     type Response = Group;
     type Error = CreateGroupError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -57,6 +58,6 @@ pub enum CreateGroupError {
     ExistsError,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

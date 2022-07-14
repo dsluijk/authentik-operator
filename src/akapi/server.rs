@@ -13,6 +13,7 @@ use serde::Serialize;
 
 use crate::AKApiError;
 
+#[derive(Debug)]
 pub struct AkServer {
     sender: SendRequest<Body>,
     host: String,

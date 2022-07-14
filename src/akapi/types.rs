@@ -6,12 +6,11 @@ pub struct User {
     pub uid: String,
     pub name: String,
     pub username: String,
-    pub path: String,
+    pub path: Option<String>,
     pub email: String,
     pub avatar: String,
     pub is_active: bool,
     pub is_superuser: bool,
-    pub groups: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

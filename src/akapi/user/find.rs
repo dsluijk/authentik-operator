@@ -17,6 +17,7 @@ impl AkApiRoute for Find {
     type Response = Vec<User>;
     type Error = FindError;
 
+    #[instrument]
     async fn send(
         api: &mut AkServer,
         api_key: &str,
@@ -71,6 +72,6 @@ pub struct FindResponse {
 pub enum FindError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error("Failed send HTTP request: {0}")]
+    #[error(transparent)]
     RequestError(#[from] AKApiError),
 }

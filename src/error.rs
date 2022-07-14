@@ -6,7 +6,7 @@ use thiserror::Error;
 pub enum AKApiError {
     #[error("Failed to prepare HTTP request: {0}")]
     StreamError(#[from] hyper::Error),
-    #[error("Failed send HTTP request: {0}")]
+    #[error("Failed to send HTTP request: {0}")]
     ConnectionError(#[from] hyper::http::Error),
     #[error("Failed to serialize request body: {0}")]
     SerializeError(#[from] serde_json::Error),

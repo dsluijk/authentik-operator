@@ -9,7 +9,7 @@ use kube::{
 use serde_json::json;
 
 use crate::akapi::{
-    token::ViewToken, token_identifier_name, AkApiRoute, AkServer, TEMP_AUTH_TOKEN,
+    auth::get_valid_token, token::ViewToken, token_identifier_name, AkApiRoute, AkServer,
 };
 
 use super::crd;
@@ -24,11 +24,14 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    // Fetch the token from the Authentik server.
+    // Get the API key.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+
+    // Fetch the token from the Authentik server.
     let token = ViewToken::send(
         &mut api,
-        TEMP_AUTH_TOKEN,
+        &api_key,
         token_identifier_name(&instance, "operatortoken"),
     )
     .await?;
@@ -76,8 +79,8 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
                 "controller": true
             }]
         },
-        "data": {
-            "token": base64::encode(token)
+        "stringData": {
+            "token": token
         }
     }))?;
 
