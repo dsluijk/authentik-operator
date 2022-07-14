@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use kube::{Client, ResourceExt};
 
 use crate::akapi::{
+    token::{DeleteToken, DeleteTokenError},
     user::{
         CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
         DeleteAccountError, Find, FindBody,
@@ -21,9 +22,10 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    let api = AkServer::connect(&instance, &ns, client).await?;
+    // Attempt to create the account.
+    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let result = CreateServiceAccount::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         CreateServiceAccountBody {
             name: API_USER.to_string(),
@@ -35,10 +37,28 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     match result {
         Ok(account) => {
             debug!("Service account created with ID `{}`.", account.user_uid);
-            Ok(())
         }
         Err(CreateServiceAccountError::ExistsError) => {
             debug!("Service account already exists, assuming it's correct.");
+        }
+        Err(e) => return Err(e.into()),
+    };
+
+    // Delete the password token for this account if it exists.
+    let result = DeleteToken::send(
+        &mut api,
+        TEMP_AUTH_TOKEN,
+        format!("service-account-{}-password", API_USER),
+    )
+    .await;
+
+    match result {
+        Ok(_) => {
+            debug!("Service account password deleted.");
+            Ok(())
+        }
+        Err(DeleteTokenError::NotFound) => {
+            debug!("The password does not exist, continuing.");
             Ok(())
         }
         Err(e) => Err(e.into()),
@@ -56,9 +76,9 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let mut result = Find::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         FindBody {
             username: Some(API_USER.to_string()),
@@ -75,8 +95,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         }
     };
 
-    let api = AkServer::connect(&instance, &ns, client).await?;
-    match DeleteAccount::send(api, TEMP_AUTH_TOKEN, user.pk).await {
+    match DeleteAccount::send(&mut api, TEMP_AUTH_TOKEN, user.pk).await {
         Ok(_) => {
             debug!("Deleted operator user.");
             Ok(())

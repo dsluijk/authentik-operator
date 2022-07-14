@@ -16,7 +16,7 @@ impl AkApiRoute for DeleteAccount {
     type Error = DeleteAccountError;
 
     async fn send(
-        mut api: AkServer,
+        api: &mut AkServer,
         api_key: &str,
         uid: Self::Body,
     ) -> Result<Self::Response, Self::Error> {

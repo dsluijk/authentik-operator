@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use hyper::{Method, StatusCode};
 use serde::Deserialize;
 use thiserror::Error;
-use url::form_urlencoded;
+use urlencoding::encode;
 
 use crate::{
     akapi::{types::User, AkApiRoute, AkServer},
@@ -18,11 +18,23 @@ impl AkApiRoute for Find {
     type Error = FindError;
 
     async fn send(
-        mut api: AkServer,
+        api: &mut AkServer,
         api_key: &str,
         body: Self::Body,
     ) -> Result<Self::Response, Self::Error> {
-        let url = format!("/api/v3/core/users/?{}", Self::make_params(body));
+        let mut params = vec!["page_size=1000".to_string()];
+
+        if let Some(name) = body.name {
+            params.push(format!("name={}", encode(&name)));
+        }
+        if let Some(username) = body.username {
+            params.push(format!("username={}", encode(&username)));
+        }
+        if let Some(uuid) = body.uuid {
+            params.push(format!("uuid={}", encode(&uuid)));
+        }
+
+        let url = format!("/api/v3/core/users/?{}", params.join("&"));
         let res = api.send(Method::GET, url.as_str(), api_key, ()).await?;
 
         match res.status() {
@@ -40,25 +52,6 @@ impl AkApiRoute for Find {
                 code
             ))),
         }
-    }
-}
-
-impl Find {
-    fn make_params(body: FindBody) -> String {
-        let mut params = form_urlencoded::Serializer::new(String::new());
-        params.append_pair("page_size", "1000");
-
-        if let Some(name) = body.name {
-            params.append_pair("name", &name);
-        }
-        if let Some(username) = body.username {
-            params.append_pair("username", &username);
-        }
-        if let Some(uuid) = body.uuid {
-            params.append_pair("uuid", &uuid);
-        }
-
-        params.finish().to_string()
     }
 }
 

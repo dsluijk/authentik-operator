@@ -74,7 +74,7 @@ impl AkServer {
         let req = Request::builder()
             .method(method)
             .uri(uri)
-            .header("Connection", "close")
+            .header("Connection", "keep-alive")
             .header("Host", self.host.as_str())
             .header("Authorization", format!("Bearer {}", api_key))
             .header("Content-Type", "application/json")

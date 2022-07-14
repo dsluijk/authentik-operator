@@ -17,7 +17,7 @@ impl AkApiRoute for CreateGroup {
     type Error = CreateGroupError;
 
     async fn send(
-        mut api: AkServer,
+        api: &mut AkServer,
         api_key: &str,
         body: Self::Body,
     ) -> Result<Self::Response, Self::Error> {

@@ -4,6 +4,7 @@ use crate::error::AKApiError;
 
 pub mod group;
 mod server;
+pub mod token;
 pub mod types;
 pub mod user;
 
@@ -23,7 +24,7 @@ pub trait AkApiRoute {
     type Error: From<AKApiError>;
 
     async fn send(
-        api: AkServer,
+        api: &mut AkServer,
         api_key: &str,
         body: Self::Body,
     ) -> Result<Self::Response, Self::Error>;

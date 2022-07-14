@@ -24,9 +24,9 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Check if the group already exists.
-    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let groups = FindGroup::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         FindGroupBody {
             name: Some(service_group_name(&instance)),
@@ -41,9 +41,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     }
 
     // Get the ID of the service account.
-    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let mut users = Find::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         FindBody {
             username: Some(API_USER.to_string()),
@@ -60,9 +59,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     };
 
     // Create the group.
-    let api = AkServer::connect(&instance, &ns, client).await?;
     let result = CreateGroup::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         CreateGroupBody {
             name: service_group_name(&instance),
@@ -97,9 +95,9 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Find the group ID.
-    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let mut groups = FindGroup::send(
-        api,
+        &mut api,
         TEMP_AUTH_TOKEN,
         FindGroupBody {
             name: Some(service_group_name(&instance)),
@@ -117,8 +115,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     };
 
     // Delete the group.
-    let api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    match DeleteGroup::send(api, TEMP_AUTH_TOKEN, group_id).await {
+    match DeleteGroup::send(&mut api, TEMP_AUTH_TOKEN, group_id).await {
         Ok(_) => {
             debug!("Deleted service group.");
             Ok(())

@@ -8,23 +8,23 @@ use crate::{
     error::AKApiError,
 };
 
-pub struct DeleteGroup;
+pub struct DeleteToken;
 
 #[async_trait]
-impl AkApiRoute for DeleteGroup {
+impl AkApiRoute for DeleteToken {
     type Body = String;
     type Response = ();
-    type Error = DeleteGroupError;
+    type Error = DeleteTokenError;
 
     async fn send(
         api: &mut AkServer,
         api_key: &str,
-        uid: Self::Body,
+        ident: Self::Body,
     ) -> Result<Self::Response, Self::Error> {
         let res = api
             .send(
                 Method::DELETE,
-                format!("/api/v3/core/groups/{}/", encode(&uid)).as_str(),
+                format!("/api/v3/core/tokens/{}/", encode(&ident)).as_str(),
                 api_key,
                 (),
             )
@@ -32,7 +32,7 @@ impl AkApiRoute for DeleteGroup {
 
         match res.status() {
             StatusCode::NO_CONTENT => Ok(()),
-            StatusCode::BAD_REQUEST => Err(Self::Error::NotFound),
+            StatusCode::NOT_FOUND => Err(Self::Error::NotFound),
             code => Err(Self::Error::Unknown(format!(
                 "Invalid status code {}",
                 code
@@ -42,8 +42,8 @@ impl AkApiRoute for DeleteGroup {
 }
 
 #[derive(Error, Debug)]
-pub enum DeleteGroupError {
-    #[error("The given group was not found.")]
+pub enum DeleteTokenError {
+    #[error("The given token was not found.")]
     NotFound,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
