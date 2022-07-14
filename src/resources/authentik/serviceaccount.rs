@@ -4,7 +4,7 @@ use kube::{Client, ResourceExt};
 use crate::akapi::{
     user::{
         CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
-        Find, FindBody,
+        DeleteAccountError, Find, FindBody,
     },
     AkApiRoute, AkServer, API_USER, TEMP_AUTH_TOKEN,
 };
@@ -76,8 +76,15 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     };
 
     let api = AkServer::connect(&instance, &ns, client).await?;
-    DeleteAccount::send(api, TEMP_AUTH_TOKEN, user.pk).await?;
-    debug!("delete operator user.");
-
-    Ok(())
+    match DeleteAccount::send(api, TEMP_AUTH_TOKEN, user.pk).await {
+        Ok(_) => {
+            debug!("Deleted operator user.");
+            Ok(())
+        }
+        Err(DeleteAccountError::NotFound) => {
+            debug!("User was not found for deletion.");
+            Ok(())
+        }
+        Err(e) => Err(e.into()),
+    }
 }

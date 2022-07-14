@@ -8,14 +8,16 @@ use kube::{
     runtime::{self, controller::Action, finalizer},
     Client,
 };
-use tokio::time::Duration;
+use tokio::{sync::Mutex, time::Duration};
 
 mod controller;
 pub mod crd;
+
 mod deployment;
 mod ingress;
 mod service;
 mod serviceaccount;
+mod servicegroup;
 
 use controller::Controller;
 
@@ -42,7 +44,7 @@ impl Manager {
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),
-                Arc::new(ctrlr),
+                Arc::new(Mutex::new(ctrlr)),
             )
             .filter_map(|x| async move { Result::ok(x) })
             .for_each(|_| futures::future::ready(()))
@@ -53,7 +55,7 @@ impl Manager {
 
     async fn reconcile(
         obj: Arc<crd::Authentik>,
-        controller: Arc<Controller>,
+        controller: Arc<Mutex<Controller>>,
         client: Client,
     ) -> Result<Action, ReconcileError> {
         let ns = obj
@@ -62,6 +64,9 @@ impl Manager {
         let servers: Api<crd::Authentik> = Api::namespaced(client, &ns);
 
         finalizer(&servers, "authentik/ak.dany.dev", obj, |event| async {
+            // Make sure only one reconciliation can be run at the same time.
+            let controller = controller.lock().await;
+
             match event {
                 finalizer::Event::Apply(server) => controller.reconcile(server).await,
                 finalizer::Event::Cleanup(server) => controller.cleanup(server).await,

@@ -37,6 +37,7 @@ rand = "0.8.5"
 hyper = "0.14.20"
 async-trait = "0.1.56"
 anyhow = "1.0.58"
+url = "2.2.2"
 
 [dependencies.kube]
 features = ["runtime", "client", "derive", "ws"]

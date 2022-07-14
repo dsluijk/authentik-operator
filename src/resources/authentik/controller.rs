@@ -10,6 +10,8 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde_json::{json, Map};
 use tokio::time::Duration;
 
+use crate::resources::authentik::servicegroup;
+
 use super::{crd, deployment, ingress, service, serviceaccount};
 
 pub struct Controller {
@@ -43,6 +45,7 @@ impl Controller {
         service::reconcile(&obj, self.client.clone()).await?;
         ingress::reconcile(&obj, self.client.clone()).await?;
         serviceaccount::reconcile(&obj, self.client.clone()).await?;
+        servicegroup::reconcile(&obj, self.client.clone()).await?;
 
         // Update status of the CRD about the reconcilidation.
         servers
@@ -65,6 +68,7 @@ impl Controller {
 
     pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
         // Cleanup all parts.
+        servicegroup::cleanup(obj.as_ref(), self.client.clone()).await?;
         serviceaccount::cleanup(obj.as_ref(), self.client.clone()).await?;
         ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
         service::cleanup(obj.as_ref(), self.client.clone()).await?;
