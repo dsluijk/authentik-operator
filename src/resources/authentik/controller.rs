@@ -48,21 +48,6 @@ impl Controller {
         servicegroup::reconcile(&obj, self.client.clone()).await?;
         secret::reconcile(&obj, self.client.clone()).await?;
 
-        // Update status of the CRD about the reconcilidation.
-        servers
-            .patch_status(
-                &name,
-                &PatchParams::apply("authentik.ak-operator").force(),
-                &Patch::Apply(json!({
-                    "apiVersion": "ak.dany.dev/v1",
-                    "kind": "Authentik",
-                    "status": crd::AuthentikStatus {
-                        hidden: true,
-                    }
-                })),
-            )
-            .await?;
-
         debug!("Reconcilidation of Authentik finished successfully, re-queued for 30 minutes.");
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
     }

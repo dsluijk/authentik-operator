@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
     kind = "Authentik",
     group = "ak.dany.dev",
     version = "v1",
-    status = "AuthentikStatus",
     plural = "authentik",
     shortname = "ak",
     namespaced
@@ -117,12 +116,6 @@ pub struct AuthentikSmtp {
     pub use_ssl: bool,
     #[serde(default = "default_smtp_timeout")]
     pub timeout: u16,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthentikStatus {
-    pub hidden: bool,
 }
 
 // -- Default value functions from here on.
