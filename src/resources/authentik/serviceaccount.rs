@@ -16,7 +16,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .metadata
         .name
         .clone()
-        .ok_or(anyhow!("Missing instance name.".to_string(),))?;
+        .ok_or(anyhow!("Missing instance name.".to_string()))?;
     let ns = obj
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
@@ -51,7 +51,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .metadata
         .name
         .clone()
-        .ok_or(anyhow!("Missing instance name.".to_string(),))?;
+        .ok_or(anyhow!("Missing instance name.".to_string()))?;
     let ns = obj
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;

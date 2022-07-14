@@ -50,7 +50,7 @@ impl AkServer {
         let mut pf = pods_api.portforward(&pod_name, &[9000]).await?;
         let port = pf
             .take_stream(9000)
-            .ok_or(anyhow!("Failed to get stream of port".to_string(),))?;
+            .ok_or(anyhow!("Failed to get stream of port".to_string()))?;
         let (sender, connection) = hyper::client::conn::handshake(port).await?;
         tokio::spawn(async move {
             if let Err(e) = connection.await {
