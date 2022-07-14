@@ -24,7 +24,7 @@ impl AkServer {
         let label_selectors = vec![
             "app.kubernetes.io/created-by=authentik-operator".to_string(),
             "app.kubernetes.io/name=authentik".to_string(),
-            "app.kubernetes.io/component=server".to_string(),
+            "app.kubernetes.io/part-of=ak-ak".to_string(),
             format!("app.kubernetes.io/instance={}", instance),
         ];
 

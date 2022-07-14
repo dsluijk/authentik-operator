@@ -122,6 +122,7 @@ fn get_labels(instance: String, version: String) -> BTreeMap<String, String> {
             "app.kubernetes.io/created-by".to_string(),
             "authentik-operator".to_string(),
         ),
+        ("app.kubernetes.io/part-of".to_string(), "ak-ak".to_string()),
         ("app.kubernetes.io/instance".to_string(), instance),
         ("app.kubernetes.io/version".to_string(), version),
     ])

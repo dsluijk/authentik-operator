@@ -87,6 +87,7 @@ pub fn get_matching_labels(instance: String) -> BTreeMap<String, String> {
             "app.kubernetes.io/name".to_string(),
             "authentik".to_string(),
         ),
+        ("app.kubernetes.io/part-of".to_string(), "ak-ak".to_string()),
         ("app.kubernetes.io/instance".to_string(), instance),
     ])
 }

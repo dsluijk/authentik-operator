@@ -39,6 +39,7 @@ async fn main() -> Result<(), StartError> {
 }
 
 async fn start_managers() -> Result<(), StartError> {
+    println!("making client");
     let client = Client::try_default().await?;
 
     let authentik_mgr = resources::AuthentikManager::new(client);

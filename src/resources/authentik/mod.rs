@@ -40,7 +40,7 @@ impl Manager {
         let ingresses = Api::<Ingress>::all(client.clone());
         let secrets = Api::<Secret>::all(client.clone());
         let lp = ListParams::default().labels(
-            "app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik",
+            "app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik,app.kubernetes.io/part-of=ak-ak",
         );
 
         let drainer = runtime::Controller::new(servers, ListParams::default())
