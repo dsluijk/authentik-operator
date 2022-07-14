@@ -70,6 +70,8 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                     "labels": get_labels(name.clone(), obj.spec.image.tag.to_string()),
                 },
                 "spec": {
+                    "serviceAccountName": format!("ak-{}", name),
+                    "enableServiceLinks": true,
                     "containers": [{
                         "name": format!("authentik-{}-server", name),
                         "image": format!("{}:{}", obj.spec.image.repository, obj.spec.image.tag),

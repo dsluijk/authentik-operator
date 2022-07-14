@@ -4,8 +4,9 @@ use anyhow::anyhow;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
 use k8s_openapi::api::{
     apps::v1::Deployment,
-    core::v1::{Secret, Service},
+    core::v1::{Secret, Service, ServiceAccount},
     networking::v1::Ingress,
+    rbac::v1::{ClusterRole, ClusterRoleBinding},
 };
 use kube::{
     api::{Api, ListParams, ResourceExt},
@@ -17,6 +18,7 @@ use tokio::{sync::Mutex, time::Duration};
 mod controller;
 pub mod crd;
 
+mod clusteraccount;
 mod deployment;
 mod ingress;
 mod secret;
@@ -39,6 +41,9 @@ impl Manager {
         let services = Api::<Service>::all(client.clone());
         let ingresses = Api::<Ingress>::all(client.clone());
         let secrets = Api::<Secret>::all(client.clone());
+        let serviceaccounts = Api::<ServiceAccount>::all(client.clone());
+        let clusterroles = Api::<ClusterRole>::all(client.clone());
+        let clusterrolebindings = Api::<ClusterRoleBinding>::all(client.clone());
         let lp = ListParams::default().labels(
             "app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik,app.kubernetes.io/part-of=ak-ak",
         );
@@ -48,6 +53,9 @@ impl Manager {
             .owns(services, lp.clone())
             .owns(ingresses, lp.clone())
             .owns(secrets, lp.clone())
+            .owns(serviceaccounts, lp.clone())
+            .owns(clusterroles, lp.clone())
+            .owns(clusterrolebindings, lp.clone())
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),

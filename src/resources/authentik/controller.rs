@@ -12,7 +12,7 @@ use tokio::time::Duration;
 
 use crate::resources::authentik::{secret, servicegroup};
 
-use super::{crd, deployment, ingress, service, serviceaccount};
+use super::{clusteraccount, crd, deployment, ingress, service, serviceaccount};
 
 pub struct Controller {
     client: Client,
@@ -41,6 +41,7 @@ impl Controller {
         }
 
         // Reconcile all parts.
+        clusteraccount::reconcile(&obj, self.client.clone()).await?;
         deployment::reconcile(&obj, self.client.clone()).await?;
         service::reconcile(&obj, self.client.clone()).await?;
         ingress::reconcile(&obj, self.client.clone()).await?;
@@ -60,6 +61,7 @@ impl Controller {
         ingress::cleanup(obj.as_ref(), self.client.clone()).await?;
         service::cleanup(obj.as_ref(), self.client.clone()).await?;
         deployment::cleanup(obj.as_ref(), self.client.clone()).await?;
+        clusteraccount::cleanup(obj.as_ref(), self.client.clone()).await?;
 
         Ok(Action::await_change())
     }
