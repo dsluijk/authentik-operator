@@ -16,10 +16,8 @@ pub async fn get_valid_token(
     instance: &str,
 ) -> Result<String> {
     // Try a token in the secret first.
-    if let Some(secret) = get_token_secret(client, ns, instance).await? {
-        if validate_token(api, &secret).await? {
-            return Ok(secret);
-        }
+    if let Some(secret) = get_valid_secret_token(api, client, ns, instance).await? {
+        return Ok(secret);
     }
 
     // Check if the temporally token is still valid.
@@ -28,6 +26,21 @@ pub async fn get_valid_token(
     }
 
     Err(anyhow!("No valid authentication token was found."))
+}
+
+pub async fn get_valid_secret_token(
+    api: &mut AkServer,
+    client: Client,
+    ns: &str,
+    instance: &str,
+) -> Result<Option<String>> {
+    if let Some(secret) = get_token_secret(client, ns, instance).await? {
+        if validate_token(api, &secret).await? {
+            return Ok(Some(secret));
+        }
+    }
+
+    Ok(None)
 }
 
 async fn validate_token(api: &mut AkServer, token: &str) -> Result<bool> {

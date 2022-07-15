@@ -7,7 +7,9 @@ use kube::{
 use serde_json::json;
 
 use crate::akapi::{
-    auth::get_valid_token, token::ViewToken, token_identifier_name, AkApiRoute, AkServer,
+    auth::{get_valid_secret_token, get_valid_token},
+    token::ViewToken,
+    token_identifier_name, AkApiRoute, AkServer,
 };
 
 use super::{crd, labels};
@@ -22,8 +24,17 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .namespace()
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
-    // Get the API key.
+    // Check if the current secret stored is valid.
+    // This is to surpress the logs in Authentik.
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
+    if get_valid_secret_token(&mut api, client.clone(), &ns, &instance)
+        .await?
+        .is_some()
+    {
+        return Ok(());
+    }
+
+    // Get the token.
     let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
 
     // Fetch the token from the Authentik server.
