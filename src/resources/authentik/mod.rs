@@ -22,6 +22,7 @@ mod clusteraccount;
 mod deployment;
 mod ingress;
 pub mod labels;
+mod remove_oobe;
 mod secret;
 mod service;
 mod serviceaccount;

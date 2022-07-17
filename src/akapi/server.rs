@@ -44,7 +44,6 @@ impl AkServer {
             Self::is_pod_ready(format!("authentik-{}-server", instance)),
         );
         let _ = tokio::time::timeout(Duration::from_secs(180), running).await?;
-        debug!("Authentik API ready.");
 
         // Port forward to the pod api.
         let mut pf = pods_api.portforward(&pod_name, &[9000]).await?;

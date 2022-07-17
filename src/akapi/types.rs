@@ -32,3 +32,10 @@ pub struct Token {
     pub description: String,
     pub expiring: bool,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Stage {
+    pub pk: String,
+    pub name: String,
+    pub component: String,
+}

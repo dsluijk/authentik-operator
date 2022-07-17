@@ -40,7 +40,6 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     .await?;
 
     if !groups.is_empty() {
-        debug!("Service group seems to exist, skipping creation");
         return Ok(());
     }
 
@@ -80,10 +79,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
             debug!("Service group created with ID `{}`.", group.pk);
             Ok(())
         }
-        Err(CreateGroupError::ExistsError) => {
-            debug!("Service account already exists, assuming that's correct.");
-            Ok(())
-        }
+        Err(CreateGroupError::ExistsError) => Ok(()),
         Err(e) => Err(e.into()),
     }
 }
