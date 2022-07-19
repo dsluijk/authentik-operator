@@ -1,0 +1,17 @@
+apiVersion: ak.dany.dev/v1
+kind: AuthentikGroup
+metadata:
+  name: admin
+spec:
+  authentikInstance: auth
+  name: admin
+  superuser: true
+---
+apiVersion: ak.dany.dev/v1
+kind: AuthentikGroup
+metadata:
+  name: subgroup
+spec:
+  authentikInstance: auth
+  name: subgroup
+  parent: admin

@@ -39,14 +39,14 @@ async fn main() -> Result<(), StartError> {
 }
 
 async fn start_managers() -> Result<(), StartError> {
-    let client = Client::try_default().await?;
-
-    let authentik_mgr = resources::AuthentikManager::new(client.clone());
-    let authentik_user_mgr = resources::AuthentikUserManager::new(client);
+    let authentik_mgr = resources::AuthentikManager::new(Client::try_default().await?);
+    let authentik_user_mgr = resources::AuthentikUserManager::new(Client::try_default().await?);
+    let authentik_group_mgr = resources::AuthentikGroupManager::new(Client::try_default().await?);
 
     tokio::select! {
         _ = authentik_mgr => warn!("Authentik controller exited"),
         _ = authentik_user_mgr => warn!("Authentik user controller exited"),
+        _ = authentik_group_mgr => warn!("Authentik user controller exited"),
     }
 
     Ok(())
