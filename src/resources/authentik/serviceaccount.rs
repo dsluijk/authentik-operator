@@ -120,7 +120,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
     let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
 
-    let mut result = Find::send(
+    let result = Find::send(
         &mut api,
         &api_key,
         FindBody {
@@ -130,7 +130,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     )
     .await?;
 
-    let user = match result.pop() {
+    let user = match result.iter().find(|&user| &user.username == API_USER) {
         Some(user) => user,
         None => {
             return Ok(());

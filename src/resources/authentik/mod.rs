@@ -17,11 +17,11 @@ use tokio::{sync::Mutex, time::Duration};
 
 mod controller;
 pub mod crd;
+pub mod labels;
 
 mod clusteraccount;
 mod deployment;
 mod ingress;
-pub mod labels;
 mod remove_oobe;
 mod secret;
 mod service;

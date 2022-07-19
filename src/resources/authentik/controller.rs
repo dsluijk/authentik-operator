@@ -10,9 +10,10 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde_json::{json, Map};
 use tokio::time::Duration;
 
-use crate::resources::authentik::{remove_oobe, secret, servicegroup};
-
-use super::{clusteraccount, crd, deployment, ingress, service, serviceaccount};
+use super::{
+    clusteraccount, crd, deployment, ingress, remove_oobe, secret, service, serviceaccount,
+    servicegroup,
+};
 
 pub struct Controller {
     client: Client,
