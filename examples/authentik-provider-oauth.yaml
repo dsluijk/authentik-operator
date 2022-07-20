@@ -1,0 +1,21 @@
+apiVersion: ak.dany.dev/v1
+kind: AuthentikOAuthProvider
+metadata:
+  name: testing-provider
+spec:
+  authentikInstance: auth
+  name: testing-provider
+  flow: default-provider-authorization-implicit-consent
+  clientType: confidential
+  scopes:
+    - "authentik default OAuth Mapping: OpenID 'email'"
+    - "authentik default OAuth Mapping: OpenID 'openid'"
+    - "authentik default OAuth Mapping: OpenID 'profile'"
+  redirectUris:
+    - example.com
+  accessCodeValidity: minutes=1
+  tokenValidity: days=30
+  claimsInToken: true
+  signingKey: authentik Self-signed Certificate
+  subjectMode: hashed_user_id
+  issuerMode: per_provider

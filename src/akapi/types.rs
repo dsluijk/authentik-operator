@@ -39,3 +39,41 @@ pub struct Stage {
     pub name: String,
     pub component: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Provider {
+    pub pk: usize,
+    pub name: String,
+    pub authorization_flow: String,
+    pub property_mappings: Vec<String>,
+    pub client_id: String,
+    pub client_secret: String,
+    pub signing_key: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Flow {
+    pub pk: String,
+    pub name: String,
+    pub slug: String,
+    pub title: String,
+    pub background: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ScopeMapping {
+    pub pk: String,
+    pub name: String,
+    pub managed: Option<String>,
+    pub expression: String,
+    pub component: String,
+    pub scope_name: String,
+    pub description: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Certificate {
+    pub pk: String,
+    pub name: String,
+    pub cert_expiry: String,
+}

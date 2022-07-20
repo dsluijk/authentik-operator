@@ -24,7 +24,7 @@ impl Controller {
         // Reconcile all parts.
         group::reconcile(&obj, self.client.clone()).await?;
 
-        debug!("Reconcilidation of Authentik user `{}` finished successfully, re-queued for 30 minutes.", obj.name_any());
+        debug!("Reconcilidation of Authentik group `{}` finished successfully, re-queued for 30 minutes.", obj.name_any());
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
     }
 

@@ -15,4 +15,11 @@ fn main() {
         "{}",
         serde_yaml::to_string(&resources::authentik_group::crd::AuthentikGroup::crd()).unwrap()
     );
+    print!(
+        "{}",
+        serde_yaml::to_string(
+            &resources::authentik_provider_oauth::crd::AuthentikOAuthProvider::crd()
+        )
+        .unwrap()
+    );
 }

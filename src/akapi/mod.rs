@@ -2,14 +2,18 @@ use async_trait::async_trait;
 
 use crate::error::AKApiError;
 
-pub mod auth;
+pub mod certificate;
 pub mod flow;
 pub mod group;
-mod server;
+pub mod propertymappings;
+pub mod provider;
 pub mod stages;
 pub mod token;
-pub mod types;
 pub mod user;
+
+pub mod auth;
+mod server;
+pub mod types;
 
 pub use server::AkServer;
 
