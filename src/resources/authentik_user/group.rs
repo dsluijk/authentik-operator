@@ -5,7 +5,7 @@ use crate::akapi::{
     auth::get_valid_token,
     group::{FindGroup, FindGroupBody},
     user::{Find, FindBody, UpdateUser, UpdateUserBody},
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::crd;
@@ -17,16 +17,15 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Find the ID's of the groups.
     let mut group_ids = Vec::new();
 
     for group_name in obj.spec.groups.as_ref().unwrap_or(&Vec::new()) {
         let result = FindGroup::send(
-            &mut api,
-            &api_key,
+            &ak,
             FindGroupBody {
                 name: Some(group_name.to_string()),
                 ..Default::default()
@@ -44,8 +43,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     // Find the user.
     let result = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(obj.spec.username.clone()),
             ..Default::default()
@@ -63,8 +61,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     // Update the user groups.
     UpdateUser::send(
-        &mut api,
-        &api_key,
+        &ak,
         UpdateUserBody {
             id: user.pk,
             groups: Some(group_ids),

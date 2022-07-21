@@ -9,7 +9,7 @@ use crate::akapi::{
         CreateServiceAccount, CreateServiceAccountBody, CreateServiceAccountError, DeleteAccount,
         DeleteAccountError, Find, FindBody,
     },
-    AkApiRoute, AkServer, API_USER,
+    AkApiRoute, AkClient, API_USER,
 };
 
 use super::crd;
@@ -25,13 +25,12 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Attempt to create the account.
     let result = CreateServiceAccount::send(
-        &mut api,
-        &api_key,
+        &ak,
         CreateServiceAccountBody {
             name: API_USER.to_string(),
             create_group: false,
@@ -48,12 +47,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     };
 
     // Delete the password token for this account if it exists.
-    let result = DeleteToken::send(
-        &mut api,
-        &api_key,
-        format!("service-account-{}-password", API_USER),
-    )
-    .await;
+    let result = DeleteToken::send(&ak, format!("service-account-{}-password", API_USER)).await;
 
     match result {
         Ok(_) => {
@@ -65,8 +59,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     // Get the ID of the service account.
     let mut users = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(API_USER.to_string()),
             ..Default::default()
@@ -83,8 +76,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     // Create the api token if it does not exist.
     let result = CreateToken::send(
-        &mut api,
-        &api_key,
+        &ak,
         CreateTokenBody {
             identifier: token_identifier_name(&instance, "operatortoken"),
             intent: "api".to_string(),
@@ -117,12 +109,11 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     let result = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(API_USER.to_string()),
             ..Default::default()
@@ -137,7 +128,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
         }
     };
 
-    match DeleteAccount::send(&mut api, &api_key, user.pk).await {
+    match DeleteAccount::send(&ak, user.pk).await {
         Ok(_) => {
             debug!("Deleted operator user.");
             Ok(())

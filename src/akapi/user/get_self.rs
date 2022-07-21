@@ -1,12 +1,9 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::{
-    akapi::{types::User, AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{types::User, AkApiRoute, AkClient};
 
 pub struct GetSelf;
 
@@ -17,22 +14,12 @@ impl AkApiRoute for GetSelf {
     type Error = GetSelfError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(Method::GET, "/api/v3/core/users/me/", api_key, body)
-            .await?;
+    async fn send(ak: &AkClient, _body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak.get("/api/v3/core/users/me/").send().await?;
 
         match res.status() {
             StatusCode::OK => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let body: GetSelfResponse =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let body: GetSelfResponse = res.json().await?;
 
                 Ok(body)
             }
@@ -57,6 +44,6 @@ pub enum GetSelfError {
     Forbidden,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

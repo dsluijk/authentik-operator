@@ -5,7 +5,7 @@ use crate::akapi::{
     auth::get_valid_token,
     flow::{DeleteFlow, DeleteFlowError},
     stages::{DeleteStage, DeleteStageError, FindStage, FindStageBody},
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::crd;
@@ -21,11 +21,11 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Create the api and get the key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Delete the flow if it exists.
-    match DeleteFlow::send(&mut api, &api_key, "initial-setup".to_string()).await {
+    match DeleteFlow::send(&ak, "initial-setup".to_string()).await {
         Ok(_) => {
             debug!("Initial flow was deleted.");
         }
@@ -35,8 +35,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     // Find and delete the OOBE stages.
     match FindStage::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindStageBody {
             name: Some("default-oobe-password".to_string()),
         },
@@ -45,7 +44,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     {
         Ok(stages) => {
             if let Some(stage) = stages.first() {
-                match DeleteStage::send(&mut api, &api_key, stage.pk.clone()).await {
+                match DeleteStage::send(&ak, stage.pk.clone()).await {
                     Ok(_) => {
                         debug!("OOBE password stage was deleted.");
                     }

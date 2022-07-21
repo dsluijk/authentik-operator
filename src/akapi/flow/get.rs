@@ -1,12 +1,8 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use thiserror::Error;
-use urlencoding::encode;
 
-use crate::{
-    akapi::{types::Flow, AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{types::Flow, AkApiRoute, AkClient};
 
 pub struct GetFlow;
 
@@ -17,21 +13,15 @@ impl AkApiRoute for GetFlow {
     type Error = GetFlowError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        slug: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let url = format!("/api/v3/flows/instances/{}/", encode(&slug));
-        let res = api.send(Method::GET, url.as_str(), api_key, ()).await?;
+    async fn send(ak: &AkClient, slug: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak
+            .get(&format!("/api/v3/flows/instances/{}/", slug))
+            .send()
+            .await?;
 
         match res.status() {
             StatusCode::OK => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let flow: Flow =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let flow: Flow = res.json().await?;
 
                 Ok(flow)
             }
@@ -47,6 +37,6 @@ impl AkApiRoute for GetFlow {
 pub enum GetFlowError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

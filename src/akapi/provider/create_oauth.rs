@@ -1,11 +1,10 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
 
 use crate::{
-    akapi::{types::Provider, AkApiRoute, AkServer},
-    error::AKApiError,
+    akapi::{types::Provider, AkApiRoute, AkClient},
     resources::authentik_provider_oauth::crd,
 };
 
@@ -18,22 +17,16 @@ impl AkApiRoute for CreateOAuthProvider {
     type Error = CreateOAuthProviderError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(Method::POST, "/api/v3/providers/oauth2/", api_key, body)
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak
+            .post("/api/v3/providers/oauth2/")
+            .json(&body)
+            .send()
             .await?;
 
         match res.status() {
             StatusCode::CREATED => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let body: Provider =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let body: Provider = res.json().await?;
 
                 Ok(body)
             }
@@ -64,6 +57,6 @@ pub struct CreateOAuthProviderBody {
 pub enum CreateOAuthProviderError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

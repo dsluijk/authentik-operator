@@ -10,7 +10,7 @@ use crate::akapi::{
         CreateOAuthProvider, CreateOAuthProviderBody, DeleteOAuthProvider,
         DeleteOAuthProviderError, FindOAuthProvider, FindOAuthProviderBody,
     },
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::crd::{self, IssuerMode, SubjectMode};
@@ -22,13 +22,12 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Check if the provider already exists.
     let providers = FindOAuthProvider::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindOAuthProviderBody {
             name: Some(obj.spec.name.clone()),
         },
@@ -44,14 +43,13 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
     }
 
     // Get the flow.
-    let flow = GetFlow::send(&mut api, &api_key, obj.spec.flow.clone()).await?;
+    let flow = GetFlow::send(&ak, obj.spec.flow.clone()).await?;
 
     // Get the ID's of the scopes.
     let mut scopes = Vec::new();
     for scope in &obj.spec.scopes {
         let mappings = FindScopeMapping::send(
-            &mut api,
-            &api_key,
+            &ak,
             FindScopeMappingBody {
                 name: Some(scope.clone()),
             },
@@ -69,8 +67,7 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
     // Get the ID of the signing key.
     let signing_key = if let Some(signing_key) = obj.spec.signing_key.clone() {
         let certificates = FindCertificate::send(
-            &mut api,
-            &api_key,
+            &ak,
             FindCertificateBody {
                 name: Some(signing_key.clone()),
                 has_keys: Some(true),
@@ -114,8 +111,7 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
         .unwrap_or(IssuerMode::PerProvider);
 
     CreateOAuthProvider::send(
-        &mut api,
-        &api_key,
+        &ak,
         CreateOAuthProviderBody {
             name: obj.spec.name.clone(),
             authorization_flow: flow.pk,
@@ -142,13 +138,12 @@ pub async fn cleanup(obj: &crd::AuthentikOAuthProvider, client: Client) -> Resul
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Find the provider.
     let providers = FindOAuthProvider::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindOAuthProviderBody {
             name: Some(obj.spec.name.clone()),
         },
@@ -164,7 +159,7 @@ pub async fn cleanup(obj: &crd::AuthentikOAuthProvider, client: Client) -> Resul
     };
 
     // Delete the provider.
-    match DeleteOAuthProvider::send(&mut api, &api_key, provider.pk.clone()).await {
+    match DeleteOAuthProvider::send(&ak, provider.pk.clone()).await {
         Ok(_) => {
             debug!("OAuth provider `{}` was deleted.", obj.name_any());
             Ok(())

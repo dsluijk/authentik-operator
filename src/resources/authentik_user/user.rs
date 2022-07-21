@@ -4,7 +4,7 @@ use kube::{Client, ResourceExt};
 use crate::akapi::{
     auth::get_valid_token,
     user::{CreateAccount, CreateAccountBody, DeleteAccount, DeleteAccountError, Find, FindBody},
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::crd;
@@ -16,13 +16,12 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Check if the account already exists.
     let result = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(obj.spec.username.clone()),
             ..Default::default()
@@ -40,8 +39,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     // Create the account as it does not exists.
     CreateAccount::send(
-        &mut api,
-        &api_key,
+        &ak,
         CreateAccountBody {
             name: obj.spec.display_name.clone(),
             username: obj.spec.username.clone(),
@@ -62,12 +60,11 @@ pub async fn cleanup(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     let result = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(obj.spec.username.clone()),
             ..Default::default()
@@ -83,7 +80,7 @@ pub async fn cleanup(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         None => return Ok(()),
     };
 
-    match DeleteAccount::send(&mut api, &api_key, user.pk).await {
+    match DeleteAccount::send(&ak, user.pk).await {
         Ok(_) => {
             debug!("Deleted user {}.", obj.spec.username);
             Ok(())

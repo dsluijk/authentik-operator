@@ -1,12 +1,9 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::{
-    akapi::{types::Group, AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{types::Group, AkApiRoute, AkClient};
 
 pub struct CreateGroup;
 
@@ -17,22 +14,12 @@ impl AkApiRoute for CreateGroup {
     type Error = CreateGroupError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(Method::POST, "/api/v3/core/groups/", api_key, body)
-            .await?;
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak.post("/api/v3/core/groups/").json(&body).send().await?;
 
         match res.status() {
             StatusCode::CREATED => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let body: Group =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let body: Group = res.json().await?;
 
                 Ok(body)
             }
@@ -58,6 +45,6 @@ pub enum CreateGroupError {
     ExistsError,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

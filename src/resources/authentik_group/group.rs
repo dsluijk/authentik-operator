@@ -7,7 +7,7 @@ use crate::akapi::{
         CreateGroup, CreateGroupBody, CreateGroupError, DeleteGroup, DeleteGroupError, FindGroup,
         FindGroupBody,
     },
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::crd;
@@ -19,13 +19,12 @@ pub async fn reconcile(obj: &crd::AuthentikGroup, client: Client) -> Result<()> 
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Check if the group already exists.
     let result = FindGroup::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindGroupBody {
             name: Some(obj.spec.name.clone()),
             ..Default::default()
@@ -41,8 +40,7 @@ pub async fn reconcile(obj: &crd::AuthentikGroup, client: Client) -> Result<()> 
     // Get the ID of the parent.
     let parent = if let Some(parent) = obj.spec.parent.clone() {
         let result = FindGroup::send(
-            &mut api,
-            &api_key,
+            &ak,
             FindGroupBody {
                 name: Some(parent.clone()),
                 ..Default::default()
@@ -60,8 +58,7 @@ pub async fn reconcile(obj: &crd::AuthentikGroup, client: Client) -> Result<()> 
 
     // Try to create the group.
     let result = CreateGroup::send(
-        &mut api,
-        &api_key,
+        &ak,
         CreateGroupBody {
             name: obj.spec.name.clone(),
             is_superuser: obj.spec.superuser.unwrap_or(false),
@@ -85,13 +82,12 @@ pub async fn cleanup(obj: &crd::AuthentikGroup, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Find the ID of the group to delete.
     let result = FindGroup::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindGroupBody {
             name: Some(obj.spec.name.clone()),
             ..Default::default()
@@ -105,7 +101,7 @@ pub async fn cleanup(obj: &crd::AuthentikGroup, client: Client) -> Result<()> {
     };
 
     // Delete the group.
-    match DeleteGroup::send(&mut api, &api_key, group_id).await {
+    match DeleteGroup::send(&ak, group_id).await {
         Ok(_) => {
             debug!("Deleted service group.");
             Ok(())

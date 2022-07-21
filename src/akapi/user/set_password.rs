@@ -1,12 +1,9 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::{
-    akapi::{AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{AkApiRoute, AkClient};
 
 pub struct SetPassword;
 
@@ -17,18 +14,11 @@ impl AkApiRoute for SetPassword {
     type Error = SetPasswordError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(
-                Method::POST,
-                &format!("/api/v3/core/users/{}/set_password/", body.id),
-                api_key,
-                body,
-            )
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak
+            .post(&format!("/api/v3/core/users/{}/set_password/", body.id))
+            .json(&body)
+            .send()
             .await?;
 
         match res.status() {
@@ -51,6 +41,6 @@ pub struct SetPasswordBody {
 pub enum SetPasswordError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

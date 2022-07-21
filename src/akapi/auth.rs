@@ -4,24 +4,20 @@ use kube::{Api, Client};
 
 use super::{
     user::{GetSelf, GetSelfError},
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 pub static TEMP_AUTH_TOKEN: &str = "AUTHENTIK_TEMP_AUTH_TOKEN";
 
-pub async fn get_valid_token(
-    api: &mut AkServer,
-    client: Client,
-    ns: &str,
-    instance: &str,
-) -> Result<String> {
+pub async fn get_valid_token(client: Client, ns: &str, instance: &str) -> Result<String> {
     // Try a token in the secret first.
-    if let Some(secret) = get_valid_secret_token(api, client, ns, instance).await? {
+    if let Some(secret) = get_valid_secret_token(client, ns, instance).await? {
         return Ok(secret);
     }
 
     // Check if the temporally token is still valid.
-    if validate_token(api, TEMP_AUTH_TOKEN).await? {
+    let ak = AkClient::new(TEMP_AUTH_TOKEN, instance, ns)?;
+    if validate_token(&ak).await? {
         return Ok(TEMP_AUTH_TOKEN.to_string());
     }
 
@@ -29,13 +25,14 @@ pub async fn get_valid_token(
 }
 
 pub async fn get_valid_secret_token(
-    api: &mut AkServer,
     client: Client,
     ns: &str,
     instance: &str,
 ) -> Result<Option<String>> {
     if let Some(secret) = get_token_secret(client, ns, instance).await? {
-        if validate_token(api, &secret).await? {
+        let ak = AkClient::new(&secret, instance, ns)?;
+
+        if validate_token(&ak).await? {
             return Ok(Some(secret));
         }
     }
@@ -43,8 +40,8 @@ pub async fn get_valid_secret_token(
     Ok(None)
 }
 
-async fn validate_token(api: &mut AkServer, token: &str) -> Result<bool> {
-    match GetSelf::send(api, token, ()).await {
+async fn validate_token(ak: &AkClient) -> Result<bool> {
+    match GetSelf::send(ak, ()).await {
         Ok(_) => Ok(true),
         Err(GetSelfError::Forbidden) => Ok(false),
         Err(e) => Err(e.into()),
@@ -52,7 +49,7 @@ async fn validate_token(api: &mut AkServer, token: &str) -> Result<bool> {
 }
 
 async fn get_token_secret(client: Client, ns: &str, instance: &str) -> Result<Option<String>> {
-    // Create or patch the secret.
+    // Get the token from a secret, iff it exists.
     let api: Api<Secret> = Api::namespaced(client, ns);
     let name = format!("ak-{}-api-operatortoken", instance);
 

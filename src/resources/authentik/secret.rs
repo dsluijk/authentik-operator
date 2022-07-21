@@ -9,7 +9,7 @@ use serde_json::json;
 use crate::akapi::{
     auth::{get_valid_secret_token, get_valid_token},
     token::ViewToken,
-    token_identifier_name, AkApiRoute, AkServer,
+    token_identifier_name, AkApiRoute, AkClient,
 };
 
 use super::{crd, labels};
@@ -26,8 +26,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     // Check if the current secret stored is valid.
     // This is to surpress the logs in Authentik.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    if get_valid_secret_token(&mut api, client.clone(), &ns, &instance)
+    if get_valid_secret_token(client.clone(), &ns, &instance)
         .await?
         .is_some()
     {
@@ -35,15 +34,11 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     }
 
     // Get the token.
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Fetch the token from the Authentik server.
-    let token = ViewToken::send(
-        &mut api,
-        &api_key,
-        token_identifier_name(&instance, "operatortoken"),
-    )
-    .await?;
+    let token = ViewToken::send(&ak, token_identifier_name(&instance, "operatortoken")).await?;
 
     // Create or patch the secret.
     let api: Api<Secret> = Api::namespaced(client, &ns);

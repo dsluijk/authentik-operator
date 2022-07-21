@@ -2,15 +2,13 @@ use anyhow::anyhow;
 use kube::runtime::finalizer;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum AKApiError {
-    #[error("Failed to prepare HTTP request: {0}")]
-    StreamError(#[from] hyper::Error),
-    #[error("Failed to send HTTP request: {0}")]
-    ConnectionError(#[from] hyper::http::Error),
-    #[error("Failed to serialize request body: {0}")]
-    SerializeError(#[from] serde_json::Error),
-}
+// #[derive(Error, Debug)]
+// pub enum AKApiError {
+//     #[error("Failed to send HTTP request: {0}")]
+//     ConnectionError(#[from] reqwest::Error),
+//     #[error("Failed to serialize request body: {0}")]
+//     SerializeError(#[from] serde_json::Error),
+// }
 
 #[derive(thiserror::Error, Debug)]
 #[error("Reconcile failed: {0}")]

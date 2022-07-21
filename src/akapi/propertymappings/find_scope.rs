@@ -1,13 +1,9 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Deserialize;
 use thiserror::Error;
-use urlencoding::encode;
 
-use crate::{
-    akapi::{types::ScopeMapping, AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{types::ScopeMapping, AkApiRoute, AkClient};
 
 pub struct FindScopeMapping;
 
@@ -18,27 +14,22 @@ impl AkApiRoute for FindScopeMapping {
     type Error = FindScopeMappingError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let mut params = vec!["page_size=1000".to_string()];
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let mut query = vec![("page_size", "1000".to_string())];
 
         if let Some(name) = body.name {
-            params.push(format!("name={}", encode(&name)));
+            query.push(("name", name));
         }
 
-        let url = format!("/api/v3/propertymappings/scope/?{}", params.join("&"));
-        let res = api.send(Method::GET, url.as_str(), api_key, ()).await?;
+        let res = ak
+            .get("/api/v3/propertymappings/scope/")
+            .query(&query)
+            .send()
+            .await?;
 
         match res.status() {
             StatusCode::OK => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let body: FindScopeMappingResponse =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let body: FindScopeMappingResponse = res.json().await?;
 
                 Ok(body.results)
             }
@@ -64,6 +55,6 @@ pub struct FindScopeMappingResponse {
 pub enum FindScopeMappingError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

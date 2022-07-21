@@ -1,6 +1,5 @@
+use anyhow::Result;
 use async_trait::async_trait;
-
-use crate::error::AKApiError;
 
 pub mod certificate;
 pub mod flow;
@@ -12,10 +11,10 @@ pub mod token;
 pub mod user;
 
 pub mod auth;
-mod server;
+mod client;
 pub mod types;
 
-pub use server::AkServer;
+pub use client::AkClient;
 
 pub static API_USER: &str = "ak-operator";
 
@@ -31,11 +30,7 @@ pub fn token_identifier_name(instance: &str, purpose: &str) -> String {
 pub trait AkApiRoute {
     type Body;
     type Response;
-    type Error: From<AKApiError>;
+    type Error: From<reqwest::Error>;
 
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error>;
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error>;
 }

@@ -1,12 +1,9 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    akapi::{AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{AkApiRoute, AkClient};
 
 pub struct CreateServiceAccount;
 
@@ -17,27 +14,16 @@ impl AkApiRoute for CreateServiceAccount {
     type Error = CreateServiceAccountError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        body: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(
-                Method::POST,
-                "/api/v3/core/users/service_account/",
-                api_key,
-                body,
-            )
+    async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak
+            .post("/api/v3/core/users/service_account/")
+            .json(&body)
+            .send()
             .await?;
 
         match res.status() {
             StatusCode::OK => {
-                let bytes = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(AKApiError::StreamError)?;
-                let body: CreateServiceAccountResponse =
-                    serde_json::from_slice(&bytes).map_err(AKApiError::SerializeError)?;
+                let body: CreateServiceAccountResponse = res.json().await?;
 
                 Ok(body)
             }
@@ -70,6 +56,6 @@ pub enum CreateServiceAccountError {
     ExistsError,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

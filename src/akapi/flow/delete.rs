@@ -1,12 +1,8 @@
 use async_trait::async_trait;
-use hyper::{Method, StatusCode};
+use reqwest::StatusCode;
 use thiserror::Error;
-use urlencoding::encode;
 
-use crate::{
-    akapi::{AkApiRoute, AkServer},
-    error::AKApiError,
-};
+use crate::akapi::{AkApiRoute, AkClient};
 
 pub struct DeleteFlow;
 
@@ -17,18 +13,10 @@ impl AkApiRoute for DeleteFlow {
     type Error = DeleteFlowError;
 
     #[instrument]
-    async fn send(
-        api: &mut AkServer,
-        api_key: &str,
-        slug: Self::Body,
-    ) -> Result<Self::Response, Self::Error> {
-        let res = api
-            .send(
-                Method::DELETE,
-                format!("/api/v3/flows/instances/{}/", encode(&slug)).as_str(),
-                api_key,
-                (),
-            )
+    async fn send(ak: &AkClient, slug: Self::Body) -> Result<Self::Response, Self::Error> {
+        let res = ak
+            .delete(&format!("/api/v3/flows/instances/{}/", slug))
+            .send()
             .await?;
 
         match res.status() {
@@ -48,6 +36,6 @@ pub enum DeleteFlowError {
     NotFound,
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
-    #[error(transparent)]
-    RequestError(#[from] AKApiError),
+    #[error("Failed to send HTTP request: {0}")]
+    ConnectionError(#[from] reqwest::Error),
 }

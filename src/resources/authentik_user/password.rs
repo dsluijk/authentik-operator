@@ -7,7 +7,7 @@ use serde_json::json;
 use crate::akapi::{
     auth::get_valid_token,
     user::{Find, FindBody, SetPassword, SetPasswordBody},
-    AkApiRoute, AkServer,
+    AkApiRoute, AkClient,
 };
 
 use super::{crd, labels};
@@ -19,8 +19,8 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     // Get the API key.
-    let mut api = AkServer::connect(&instance, &ns, client.clone()).await?;
-    let api_key = get_valid_token(&mut api, client.clone(), &ns, &instance).await?;
+    let api_key = get_valid_token(client.clone(), &ns, &instance).await?;
+    let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Check if the secret already exists.
     let secret_api: Api<Secret> = Api::namespaced(client.clone(), &ns);
@@ -34,8 +34,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     // Find the user.
     let result = Find::send(
-        &mut api,
-        &api_key,
+        &ak,
         FindBody {
             username: Some(obj.spec.username.clone()),
             ..Default::default()
@@ -62,8 +61,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     // Set the password on the user.
     SetPassword::send(
-        &mut api,
-        &api_key,
+        &ak,
         SetPasswordBody {
             id: user.pk,
             password: password.clone(),
