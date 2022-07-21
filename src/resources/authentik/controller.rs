@@ -93,7 +93,7 @@ impl Controller {
         }
 
         let pp = PatchParams::apply("authentik.ak-operator");
-        let patched_secret = Patch::Apply(json!({
+        let patched_secret = Patch::Strategic(json!({
             "apiVersion": "ak.dany.dev/v1",
             "kind": "Authentik",
             "spec": values

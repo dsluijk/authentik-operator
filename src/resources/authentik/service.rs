@@ -21,8 +21,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let api: Api<Service> = Api::namespaced(client, &ns);
     api.patch(
         &format!("authentik-{}", instance),
-        &PatchParams::apply("authentik.ak-operator").force(),
-        &Patch::Apply(&build(instance.clone(), obj)?),
+        &PatchParams::apply("authentik.ak-operator"),
+        &Patch::Strategic(&build(instance.clone(), obj)?),
     )
     .await?;
 
