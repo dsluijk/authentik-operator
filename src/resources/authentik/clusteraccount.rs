@@ -4,7 +4,7 @@ use k8s_openapi::api::{
     rbac::v1::{ClusterRole, ClusterRoleBinding},
 };
 use kube::{
-    api::{Patch, PatchParams, PostParams},
+    api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
 use serde_json::json;
@@ -23,54 +23,30 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     // Create the service account.
     let api: Api<ServiceAccount> = Api::namespaced(client.clone(), &ns);
-    if let Some(_) = api.get_opt(&format!("ak-{}", &instance)).await? {
-        api.patch(
-            &format!("ak-{}", &instance),
-            &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build_serviceaccount(instance.clone(), obj)?),
-        )
-        .await?;
-    } else {
-        api.create(
-            &PostParams::default(),
-            &build_serviceaccount(instance.clone(), obj)?,
-        )
-        .await?;
-    }
+    api.patch(
+        &format!("ak-{}", &instance),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(&build_serviceaccount(instance.clone(), obj)?),
+    )
+    .await?;
 
     // Create the cluster role.
     let api: Api<ClusterRole> = Api::all(client.clone());
-    if let Some(_) = api.get_opt(&format!("ak-{}", &instance)).await? {
-        api.patch(
-            &format!("ak-{}", &instance),
-            &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build_clusterrole(instance.clone(), obj)?),
-        )
-        .await?;
-    } else {
-        api.create(
-            &PostParams::default(),
-            &build_clusterrole(instance.clone(), obj)?,
-        )
-        .await?;
-    }
+    api.patch(
+        &format!("ak-{}", &instance),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(&build_clusterrole(instance.clone(), obj)?),
+    )
+    .await?;
 
     // Create the cluster role binding.
     let api: Api<ClusterRoleBinding> = Api::all(client.clone());
-    if let Some(_) = api.get_opt(&format!("ak-{}", &instance)).await? {
-        api.patch(
-            &format!("ak-{}", &instance),
-            &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build_binding(instance.clone(), obj, &ns)?),
-        )
-        .await?;
-    } else {
-        api.create(
-            &PostParams::default(),
-            &build_binding(instance.clone(), obj, &ns)?,
-        )
-        .await?;
-    }
+    api.patch(
+        &format!("ak-{}", &instance),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(&build_binding(instance.clone(), obj, &ns)?),
+    )
+    .await?;
 
     Ok(())
 }

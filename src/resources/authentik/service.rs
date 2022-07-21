@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Service;
 use kube::{
-    api::{Patch, PatchParams, PostParams},
+    api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
 use serde_json::json;
@@ -19,17 +19,12 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         .ok_or(anyhow!("Missing namespace `{}`.", instance.clone()))?;
 
     let api: Api<Service> = Api::namespaced(client, &ns);
-    if let Some(_) = api.get_opt(&format!("authentik-{}", instance)).await? {
-        api.patch(
-            &format!("authentik-{}", instance),
-            &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build(instance.clone(), obj)?),
-        )
-        .await?;
-    } else {
-        api.create(&PostParams::default(), &build(instance.clone(), obj)?)
-            .await?;
-    }
+    api.patch(
+        &format!("authentik-{}", instance),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(&build(instance.clone(), obj)?),
+    )
+    .await?;
 
     Ok(())
 }

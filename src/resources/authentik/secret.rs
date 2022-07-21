@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
-    api::{Patch, PatchParams, PostParams},
+    api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
 use serde_json::json;
@@ -43,21 +43,12 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Create or patch the secret.
     let api: Api<Secret> = Api::namespaced(client, &ns);
     let name = format!("ak-{}-api-operatortoken", instance);
-    if let Some(_) = api.get_opt(&name).await? {
-        api.patch(
-            &name,
-            &PatchParams::apply("authentik.ak-operator").force(),
-            &Patch::Apply(&build(instance.clone(), obj, token)?),
-        )
-        .await?;
-    } else {
-        info!("Token secret did not exist, creating it now.");
-        api.create(
-            &PostParams::default(),
-            &build(instance.clone(), obj, token)?,
-        )
-        .await?;
-    }
+    api.patch(
+        &name,
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(&build(instance.clone(), obj, token)?),
+    )
+    .await?;
 
     Ok(())
 }

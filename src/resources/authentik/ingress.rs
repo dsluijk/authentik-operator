@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::networking::v1::Ingress;
 use kube::{
-    api::{DeleteParams, Patch, PatchParams, PostParams},
+    api::{DeleteParams, Patch, PatchParams},
     Api, Client, ResourceExt,
 };
 use serde_json::json;
@@ -23,17 +23,12 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     if let Some(ing) = &obj.spec.ingress {
         // Create or update the ingress.
-        if ingress.is_some() {
-            api.patch(
-                &format!("authentik-{}", instance),
-                &PatchParams::apply("authentik.ak-operator").force(),
-                &Patch::Apply(&build(instance.clone(), obj, ing)?),
-            )
-            .await?;
-        } else {
-            api.create(&PostParams::default(), &build(instance.clone(), obj, ing)?)
-                .await?;
-        }
+        api.patch(
+            &format!("authentik-{}", instance),
+            &PatchParams::apply("authentik.ak-operator").force(),
+            &Patch::Apply(&build(instance.clone(), obj, ing)?),
+        )
+        .await?;
     } else {
         if ingress.is_some() {
             // Remove the ingress, as it's no longer in the CRD defined.
