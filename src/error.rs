@@ -2,14 +2,6 @@ use anyhow::anyhow;
 use kube::runtime::finalizer;
 use thiserror::Error;
 
-// #[derive(Error, Debug)]
-// pub enum AKApiError {
-//     #[error("Failed to send HTTP request: {0}")]
-//     ConnectionError(#[from] reqwest::Error),
-//     #[error("Failed to serialize request body: {0}")]
-//     SerializeError(#[from] serde_json::Error),
-// }
-
 #[derive(thiserror::Error, Debug)]
 #[error("Reconcile failed: {0}")]
 pub struct ReconcileError(#[from] anyhow::Error);
