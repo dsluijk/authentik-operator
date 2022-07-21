@@ -103,7 +103,7 @@ pub async fn cleanup(obj: &crd::AuthentikGroup, client: Client) -> Result<()> {
     // Delete the group.
     match DeleteGroup::send(&ak, group_id).await {
         Ok(_) => {
-            debug!("Deleted service group.");
+            info!("Deleted service group.");
             Ok(())
         }
         Err(DeleteGroupError::NotFound) => Ok(()),

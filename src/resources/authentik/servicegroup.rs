@@ -73,7 +73,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     match result {
         Ok(group) => {
-            debug!("Service group created with ID `{}`.", group.pk);
+            info!("Service group created with ID `{}`.", group.pk);
             Ok(())
         }
         Err(CreateGroupError::ExistsError) => Ok(()),
@@ -108,7 +108,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     let group_id = match groups.pop() {
         Some(group) => group.pk,
         None => {
-            debug!("Group was not found, so cannot delete it.");
+            info!("Group was not found, so cannot delete it.");
             return Ok(());
         }
     };
@@ -116,11 +116,11 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Delete the group.
     match DeleteGroup::send(&ak, group_id).await {
         Ok(_) => {
-            debug!("Deleted service group.");
+            info!("Deleted service group.");
             Ok(())
         }
         Err(DeleteGroupError::NotFound) => {
-            debug!("Group was not found, so cannot delete it.");
+            info!("Group was not found, so cannot delete it.");
             Ok(())
         }
         Err(e) => Err(e.into()),

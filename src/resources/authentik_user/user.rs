@@ -82,7 +82,7 @@ pub async fn cleanup(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
 
     match DeleteAccount::send(&ak, user.pk).await {
         Ok(_) => {
-            debug!("Deleted user {}.", obj.spec.username);
+            info!("Deleted user {}.", obj.spec.username);
             Ok(())
         }
         Err(DeleteAccountError::NotFound) => Ok(()),

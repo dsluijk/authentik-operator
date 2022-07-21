@@ -77,7 +77,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
         )
         .await?;
 
-    debug!("Set the password for the user `{}`.", obj.name_any());
+    info!("Set the password for the user `{}`.", obj.name_any());
 
     Ok(())
 }
@@ -99,8 +99,7 @@ fn build(name: String, obj: &crd::AuthentikUser, password: String) -> Result<Sec
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "AuthentikUser",
                 "name": obj.name_any(),
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         },
         "stringData": {

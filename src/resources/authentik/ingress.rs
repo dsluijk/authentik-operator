@@ -96,8 +96,7 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         },
         "spec": {

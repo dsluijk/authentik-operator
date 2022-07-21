@@ -51,7 +51,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         )
         .await?;
     } else {
-        debug!("Token secret did not exist, creating it now.");
+        info!("Token secret did not exist, creating it now.");
         api.create(
             &PostParams::default(),
             &build(instance.clone(), obj, token)?,
@@ -79,8 +79,7 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         },
         "stringData": {

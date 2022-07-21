@@ -27,7 +27,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     // Delete the flow if it exists.
     match DeleteFlow::send(&ak, "initial-setup".to_string()).await {
         Ok(_) => {
-            debug!("Initial flow was deleted.");
+            info!("Initial flow was deleted.");
         }
         Err(DeleteFlowError::NotFound) => {}
         Err(e) => return Err(e.into()),
@@ -46,7 +46,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
             if let Some(stage) = stages.first() {
                 match DeleteStage::send(&ak, stage.pk.clone()).await {
                     Ok(_) => {
-                        debug!("OOBE password stage was deleted.");
+                        info!("OOBE password stage was deleted.");
                     }
                     Err(DeleteStageError::NotFound) => {}
                     Err(e) => return Err(e.into()),

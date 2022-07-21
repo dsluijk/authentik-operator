@@ -40,7 +40,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     match result {
         Ok(account) => {
-            debug!("Service account created with ID `{}`.", account.user_uid);
+            info!("Service account created with ID `{}`.", account.user_uid);
         }
         Err(CreateServiceAccountError::ExistsError) => {}
         Err(e) => return Err(e.into()),
@@ -51,7 +51,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     match result {
         Ok(_) => {
-            debug!("Service account password deleted.");
+            info!("Service account password deleted.");
         }
         Err(DeleteTokenError::NotFound) => {}
         Err(e) => return Err(e.into()),
@@ -90,7 +90,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     match result {
         Ok(_) => {
-            debug!("Token for the service account was created.");
+            info!("Token for the service account was created.");
             Ok(())
         }
         Err(CreateTokenError::ExistsError) => Ok(()),
@@ -130,7 +130,7 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
 
     match DeleteAccount::send(&ak, user.pk).await {
         Ok(_) => {
-            debug!("Deleted operator user.");
+            info!("Deleted operator user.");
             Ok(())
         }
         Err(DeleteAccountError::NotFound) => Ok(()),

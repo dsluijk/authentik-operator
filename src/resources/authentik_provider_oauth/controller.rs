@@ -16,7 +16,7 @@ impl Controller {
     }
 
     pub async fn reconcile(&self, obj: Arc<crd::AuthentikOAuthProvider>) -> Result<Action> {
-        debug!(
+        info!(
             "Starting reconcilidation of Authentik oauth provider `{}`.",
             obj.name_any()
         );
@@ -24,7 +24,7 @@ impl Controller {
         // Reconcile all parts.
         provider::reconcile(&obj, self.client.clone()).await?;
 
-        debug!("Reconcilidation of Authentik oauth provider `{}` finished successfully, re-queued for 30 minutes.", obj.name_any());
+        info!("Reconcilidation of Authentik oauth provider `{}` finished successfully, re-queued for 30 minutes.", obj.name_any());
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
     }
 

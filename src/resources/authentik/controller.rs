@@ -25,7 +25,7 @@ impl Controller {
     }
 
     pub async fn reconcile(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
-        debug!("Starting reconcilidation of Authentik.");
+        info!("Starting reconcilidation of Authentik.");
         let name = obj.name_any();
         let ns = obj
             .namespace()
@@ -51,7 +51,7 @@ impl Controller {
         secret::reconcile(&obj, self.client.clone()).await?;
         remove_oobe::reconcile(&obj, self.client.clone()).await?;
 
-        debug!("Reconcilidation of Authentik finished successfully, re-queued for 30 minutes.");
+        info!("Reconcilidation of Authentik finished successfully, re-queued for 30 minutes.");
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
     }
 

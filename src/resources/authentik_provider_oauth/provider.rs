@@ -161,7 +161,7 @@ pub async fn cleanup(obj: &crd::AuthentikOAuthProvider, client: Client) -> Resul
     // Delete the provider.
     match DeleteOAuthProvider::send(&ak, provider.pk.clone()).await {
         Ok(_) => {
-            debug!("OAuth provider `{}` was deleted.", obj.name_any());
+            info!("OAuth provider `{}` was deleted.", obj.name_any());
             Ok(())
         }
         Err(DeleteOAuthProviderError::NotFound) => Ok(()),

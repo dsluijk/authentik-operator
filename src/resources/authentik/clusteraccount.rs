@@ -91,8 +91,7 @@ fn build_serviceaccount(name: String, obj: &crd::Authentik) -> Result<ServiceAcc
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         }
     }))?;
@@ -111,8 +110,7 @@ fn build_clusterrole(name: String, obj: &crd::Authentik) -> Result<ClusterRole> 
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         },
         "rules": [
@@ -163,8 +161,7 @@ fn build_binding(name: String, obj: &crd::Authentik, ns: &str) -> Result<Cluster
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik."),
-                "controller": true
+                "uid": obj.uid().expect("Failed to get UID of Authentik.")
             }]
         },
         "roleRef": {
