@@ -30,18 +30,6 @@ When all required objects are deleted, then you can delete it like so:
 helm uninstall akoperator
 ```
 
-## Differences
-
-This operator changes some behavior compared to a "vanilla" installation of Authentik.
-The most notable of these are, in no particulair order:
-
--   The initial setup flow is deleted, along with the associated stage. Normally this is used in the `/if/flow/initial-setup/` page.
--   The `akadmin` user is deleted, along with the `authentik Admins` group.
--   A group `akOperator authentik service group` is created. **Do not delete this group**.
--   A service account `ak-operator` is created. **Also do not delete this**.
--   An `ak-operator-authentik__operatortoken` api token is created. You get it now, **don't delete this**.
--   An hardcoded bootstrap token is added, but removed soon after.
-
 ## Usage
 
 ### Quickstart
@@ -70,7 +58,7 @@ This user has full admin rights, and you can use the Authentik instance like nor
 
 For a more in-depth guide, scroll down a little bit.
 
-### Reference
+### Custom Resources
 
 This controller watches multiple custom resources, which all have their own page of documentation.
 Click the link corresponding to the CRD you want to know more about to go there.
@@ -84,6 +72,18 @@ Open an issue!
 | [AuthentikGroup](docs/authentik-group.md)                  | Group within Authentik. This can be a superuser group.         |
 | [AuthentikOAuthProvider](docs/authentik-provider-oauth.md) | Creates a OAuth 2.0 / OpenID provider.                         |
 | [AuthentikUser](docs/authentik-user.md)                    | Authentik user, as you are familiar with.                      |
+
+## Differences
+
+This operator changes some behavior compared to a "vanilla" installation of Authentik.
+The most notable of these are, in no particulair order:
+
+-   The initial setup flow is deleted, along with the associated stage. Normally this is used in the `/if/flow/initial-setup/` page.
+-   The `akadmin` user is deleted, along with the `authentik Admins` group.
+-   A group `akOperator authentik service group` is created. **Do not delete this group**.
+-   A service account `ak-operator` is created. **Also do not delete this**.
+-   An `ak-operator-authentik__operatortoken` api token is created. You get it now, **don't delete this**.
+-   An hardcoded bootstrap token is added, but removed soon after.
 
 ## Development
 
