@@ -3,7 +3,7 @@ kind: AuthentikOAuthProvider
 metadata:
   name: testing-provider
 spec:
-  authentikInstance: auth
+  authentikInstance: authentik
   name: testing-provider
   flow: default-provider-authorization-implicit-consent
   clientType: confidential

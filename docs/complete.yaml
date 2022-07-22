@@ -1,0 +1,44 @@
+---
+apiVersion: ak.dany.dev/v1
+kind: Authentik
+metadata:
+  name: authentik
+spec:
+  postgres:
+    host: postgres-postgresql
+    database: postgres
+    username: postgres
+    passwordSecret: postgres-postgresql
+    passwordSecretKey: postgres-password
+  redis:
+    host: redis-master
+  ingress:
+    className: nginx
+    rules:
+      - host: login.example.com
+        paths:
+          - path: "/"
+            pathType: "Prefix"
+---
+apiVersion: ak.dany.dev/v1
+kind: AuthentikGroup
+metadata:
+  name: admin
+spec:
+  authentikInstance: authentik
+  name: admin
+  superuser: true
+---
+apiVersion: ak.dany.dev/v1
+kind: AuthentikUser
+metadata:
+  name: adminuser
+spec:
+  authentikInstance: authentik
+  username: admin
+  displayName: Admin User
+  path: users/admin
+  email: admin@example.com
+  password: HelloController!
+  groups:
+    - admin

@@ -1,7 +1,7 @@
 apiVersion: ak.dany.dev/v1
 kind: Authentik
 metadata:
-  name: auth
+  name: authentik
 spec:
   postgres:
     host: postgres-postgresql

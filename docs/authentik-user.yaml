@@ -3,11 +3,11 @@ kind: AuthentikUser
 metadata:
   name: exampleuser
 spec:
-  authentikInstance: auth
+  authentikInstance: authentik
   username: user
   displayName: User
   path: users
   email: user@example.com
   password: example123
   groups:
-    - admin
+    - supergroup
