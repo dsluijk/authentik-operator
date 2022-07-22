@@ -50,7 +50,7 @@ pub struct AuthentikFooterLink {
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthentikIngress {
-    pub class_name: String,
+    pub class_name: Option<String>,
     pub rules: Vec<AuthentikIngressRule>,
     #[serde(default)]
     pub tls: Vec<AuthentikIngressTLS>,

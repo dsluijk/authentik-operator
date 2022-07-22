@@ -85,7 +85,7 @@ spec:
 | redis.port                       | False    | `6379`                       | The port of this Redis server.                                              |
 | redis.password                   | False    |                              | An optional password used to authenticate against the Redis server.         |
 | ingress                          | False    |                              | The ingress definition. The ingress is not created if this is not present.  |
-| ingress.className                | True     |                              | The ingress class name to use.                                              |
+| ingress.className                | False    |                              | The ingress class name to use. Leave empty to use the default.              |
 | ingress.rules[].host             | False    |                              | The host to use for this rule. Empty for any.                               |
 | ingress.rules[].paths[].path     | True     |                              | The path to match against.                                                  |
 | ingress.rules[].paths[].pathType | False    | `ImplementationSpecific`     | The type of path to match with.                                             |
