@@ -28,7 +28,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &format!("authentik-{}-server", instance),
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Strategic(&build_server(instance.clone(), obj)?),
+        &Patch::Apply(&build_server(instance.clone(), obj)?),
     )
     .await?;
 
@@ -37,7 +37,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &format!("authentik-{}-worker", instance),
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Strategic(&build_worker(instance.clone(), obj)?),
+        &Patch::Apply(&build_worker(instance.clone(), obj)?),
     )
     .await?;
 

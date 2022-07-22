@@ -26,7 +26,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         api.patch(
             &format!("authentik-{}", instance),
             &PatchParams::apply("authentik.ak-operator"),
-            &Patch::Strategic(&build(instance.clone(), obj, ing)?),
+            &Patch::Apply(&build(instance.clone(), obj, ing)?),
         )
         .await?;
     } else {
@@ -44,18 +44,17 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
 }
 
 fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Result<Ingress> {
-    let tls = match &ing.tls {
-        Some(tls) => tls
+    let tls = ing.tls.as_ref().map(|tls_list| {
+        tls_list
             .iter()
-            .map(|t| {
+            .map(|tls| {
                 json!({
-                    "hosts": t.hosts,
-                    "secretName": t.secret_name,
+                    "hosts": tls.hosts,
+                    "secretName": tls.secret_name,
                 })
             })
-            .collect(),
-        None => Vec::new(),
-    };
+            .collect::<Vec<serde_json::Value>>()
+    });
 
     let rules: serde_json::Value = ing
         .rules
@@ -97,8 +96,8 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
         },
         "spec": {
             "ingressClassName": ing.class_name,
-            "tls": tls,
             "rules": rules,
+            "tls": tls,
         }
     }))?;
 
