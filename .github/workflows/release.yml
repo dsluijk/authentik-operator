@@ -29,5 +29,5 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.PAT_TOKEN }}"
           CR_RELEASE_NAME_TEMPLATE: "v{{ .Version }}"
