@@ -16,7 +16,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_TOKEN }}
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
@@ -27,6 +26,8 @@ jobs:
           version: v3.8.1
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.0
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_RELEASE_NAME_TEMPLATE: "v{{ .Version }}"
