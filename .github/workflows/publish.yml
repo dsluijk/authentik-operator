@@ -3,7 +3,7 @@ name: Docker Publish
 on:
   push:
     tags:
-      - "*"
+      - "authentik-operator-*"
 
 jobs:
   buildDockerImage:
@@ -26,9 +26,8 @@ jobs:
         with:
           images: ghcr.io/dsluijk/authentik-operator
           tags: |
+            type=match, group=1, pattern=(\d*\.\d*\.\d*(.*)?)
             type=sha, prefix={{date 'X'}}-
-            type=semver, pattern={{version}}
-            latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
