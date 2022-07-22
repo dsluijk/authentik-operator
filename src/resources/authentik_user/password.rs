@@ -99,7 +99,8 @@ fn build(name: String, obj: &crd::AuthentikUser, password: String) -> Result<Sec
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "AuthentikUser",
                 "name": obj.name_any(),
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
+                "uid": obj.uid().expect("Failed to get UID of Authentik."),
+                "controller": true,
             }]
         },
         "stringData": {

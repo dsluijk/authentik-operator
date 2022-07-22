@@ -81,7 +81,8 @@ fn build_serviceaccount(name: String, obj: &crd::Authentik) -> Result<ServiceAcc
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
+                "uid": obj.uid().expect("Failed to get UID of Authentik."),
+                "controller": true,
             }]
         }
     }))?;

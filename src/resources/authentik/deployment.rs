@@ -59,7 +59,8 @@ fn build_server(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
+                "uid": obj.uid().expect("Failed to get UID of Authentik."),
+                "controller": true,
             }]
         },
         "spec": {
@@ -129,7 +130,8 @@ fn build_worker(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                 "apiVersion": "ak.dany.dev/v1",
                 "kind": "Authentik",
                 "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
+                "uid": obj.uid().expect("Failed to get UID of Authentik."),
+                "controller": true,
             }]
         },
         "spec": {
