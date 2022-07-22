@@ -14,7 +14,8 @@ use serde::{Deserialize, Serialize};
 )]
 pub struct AuthentikSpec {
     pub secret_key: Option<String>,
-    pub log_level: Option<String>,
+    #[serde(default = "default_log_level")]
+    pub log_level: String,
     #[serde(default = "default_avatars")]
     pub avatars: String,
     #[serde(default = "default_image")]
@@ -51,7 +52,8 @@ pub struct AuthentikFooterLink {
 pub struct AuthentikIngress {
     pub class_name: String,
     pub rules: Vec<AuthentikIngressRule>,
-    pub tls: Option<Vec<AuthentikIngressTLS>>,
+    #[serde(default)]
+    pub tls: Vec<AuthentikIngressTLS>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
@@ -119,6 +121,10 @@ pub struct AuthentikSmtp {
 }
 
 // -- Default value functions from here on.
+fn default_log_level() -> String {
+    "info".to_string()
+}
+
 fn default_avatars() -> String {
     "gravatar".to_string()
 }

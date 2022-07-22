@@ -40,5 +40,5 @@ spec:
 | displayName       | True     |            | The display name of the user, this is shown in lists.                                             |
 | email             | False    |            | An optional email to add to the user. If set it can also be used to login.                        |
 | password          | False    | `{random}` | Set the password to a fixed value. Will be randomized if not provided.                            |
-| path              | True     |            | The path of the user, used for organizing the users in a tree.                                    |
-| groups[]          | False    |            | A list of group _names_ to add the user to. This can be combined with `AuthentikGroup` resources. |
+| path              | False    | `users`    | The path of the user, used for organizing the users in a tree.                                    |
+| groups[]          | False    | `[]`       | A list of group _names_ to add the user to. This can be combined with `AuthentikGroup` resources. |

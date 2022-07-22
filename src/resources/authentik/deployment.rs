@@ -164,6 +164,11 @@ fn build_worker(name: String, obj: &crd::Authentik) -> Result<Deployment> {
 fn build_env(obj: &crd::AuthentikSpec) -> Vec<EnvVar> {
     let mut env = vec![
         EnvVar {
+            name: "AUTHENTIK_LOG_LEVEL".to_string(),
+            value: Some(obj.log_level.clone()),
+            value_from: None,
+        },
+        EnvVar {
             name: "AUTHENTIK_SECRET_KEY".to_string(),
             value: obj.secret_key.clone(),
             value_from: None,
@@ -219,14 +224,6 @@ fn build_env(obj: &crd::AuthentikSpec) -> Vec<EnvVar> {
             value_from: None,
         },
     ];
-
-    if let Some(log_level) = &obj.log_level {
-        env.push(EnvVar {
-            name: "AUTHENTIK_LOG_LEVEL".to_string(),
-            value: Some(log_level.clone()),
-            value_from: None,
-        });
-    }
 
     if let Some((secret, key)) = obj
         .postgres

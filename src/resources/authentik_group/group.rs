@@ -61,7 +61,7 @@ pub async fn reconcile(obj: &crd::AuthentikGroup, client: Client) -> Result<()> 
         &ak,
         CreateGroupBody {
             name: obj.spec.name.clone(),
-            is_superuser: obj.spec.superuser.unwrap_or(false),
+            is_superuser: obj.spec.superuser,
             users: Vec::new(),
             parent,
         },

@@ -22,6 +22,12 @@ pub struct AuthentikUserSpec {
     #[validate(email)]
     pub email: Option<String>,
     #[validate(length(min = 1))]
+    #[serde(default = "default_path")]
     pub path: String,
-    pub groups: Option<Vec<String>>,
+    #[serde(default)]
+    pub groups: Vec<String>,
+}
+
+fn default_path() -> String {
+    "users".to_string()
 }

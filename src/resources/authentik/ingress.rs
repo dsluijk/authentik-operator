@@ -44,17 +44,16 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
 }
 
 fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Result<Ingress> {
-    let tls = ing.tls.as_ref().map(|tls_list| {
-        tls_list
-            .iter()
-            .map(|tls| {
-                json!({
-                    "hosts": tls.hosts,
-                    "secretName": tls.secret_name,
-                })
+    let tls = ing
+        .tls
+        .iter()
+        .map(|tls| {
+            json!({
+                "hosts": tls.hosts,
+                "secretName": tls.secret_name,
             })
-            .collect::<Vec<serde_json::Value>>()
-    });
+        })
+        .collect::<Vec<serde_json::Value>>();
 
     let rules: serde_json::Value = ing
         .rules

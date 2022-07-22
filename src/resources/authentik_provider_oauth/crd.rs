@@ -22,12 +22,18 @@ pub struct AuthentikOAuthProviderSpec {
     pub scopes: Vec<String>,
     #[validate(length(min = 1))]
     pub redirect_uris: Vec<String>,
-    pub access_code_validity: Option<String>,
-    pub token_validity: Option<String>,
-    pub claims_in_token: Option<bool>,
+    #[serde(default = "default_access_code_validity")]
+    pub access_code_validity: String,
+    #[serde(default = "default_token_validity")]
+    pub token_validity: String,
+    #[serde(default = "default_claims_in_token")]
+    pub claims_in_token: bool,
+    #[serde(default)]
     pub signing_key: Option<String>,
-    pub subject_mode: Option<SubjectMode>,
-    pub issuer_mode: Option<IssuerMode>,
+    #[serde(default = "default_subject_mode")]
+    pub subject_mode: SubjectMode,
+    #[serde(default = "default_issuer_mode")]
+    pub issuer_mode: IssuerMode,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -51,4 +57,25 @@ pub enum SubjectMode {
 pub enum IssuerMode {
     Global,
     PerProvider,
+}
+
+// -- Default value functions from here on.
+fn default_access_code_validity() -> String {
+    "minutes=1".to_string()
+}
+
+fn default_token_validity() -> String {
+    "days=30".to_string()
+}
+
+fn default_claims_in_token() -> bool {
+    true
+}
+
+fn default_subject_mode() -> SubjectMode {
+    SubjectMode::HashedUserId
+}
+
+fn default_issuer_mode() -> IssuerMode {
+    IssuerMode::PerProvider
 }

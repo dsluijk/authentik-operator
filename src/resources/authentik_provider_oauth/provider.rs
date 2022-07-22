@@ -13,7 +13,7 @@ use crate::akapi::{
     AkApiRoute, AkClient,
 };
 
-use super::crd::{self, IssuerMode, SubjectMode};
+use super::crd;
 
 pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Result<()> {
     let instance = obj.spec.authentik_instance.to_string();
@@ -89,41 +89,20 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
     };
 
     // Create the provider.
-    let access_code_validity = obj
-        .spec
-        .access_code_validity
-        .clone()
-        .unwrap_or("minutes=1".to_string());
-    let token_validity = obj
-        .spec
-        .token_validity
-        .clone()
-        .unwrap_or("days=30".to_string());
-    let sub_mode = obj
-        .spec
-        .subject_mode
-        .clone()
-        .unwrap_or(SubjectMode::HashedUserId);
-    let issuer_mode = obj
-        .spec
-        .issuer_mode
-        .clone()
-        .unwrap_or(IssuerMode::PerProvider);
-
     CreateOAuthProvider::send(
         &ak,
         CreateOAuthProviderBody {
+            signing_key,
             name: obj.spec.name.clone(),
             authorization_flow: flow.pk,
             property_mappings: scopes,
             client_type: obj.spec.client_type.clone(),
-            include_claims_in_id_token: obj.spec.claims_in_token.unwrap_or(true),
+            include_claims_in_id_token: obj.spec.claims_in_token,
             redirect_uris: obj.spec.redirect_uris.join("\n"),
-            access_code_validity,
-            token_validity,
-            signing_key,
-            sub_mode,
-            issuer_mode,
+            access_code_validity: obj.spec.access_code_validity.clone(),
+            token_validity: obj.spec.token_validity.clone(),
+            sub_mode: obj.spec.subject_mode.clone(),
+            issuer_mode: obj.spec.issuer_mode.clone(),
         },
     )
     .await?;

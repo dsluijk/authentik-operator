@@ -23,7 +23,7 @@ pub async fn reconcile(obj: &crd::AuthentikUser, client: Client) -> Result<()> {
     // Find the ID's of the groups.
     let mut group_ids = Vec::new();
 
-    for group_name in obj.spec.groups.as_ref().unwrap_or(&Vec::new()) {
+    for group_name in &obj.spec.groups {
         let result = FindGroup::send(
             &ak,
             FindGroupBody {
