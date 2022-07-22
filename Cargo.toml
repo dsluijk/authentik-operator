@@ -1,6 +1,6 @@
 [package]
 name = "authentik-operator"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2021"
 authors = ["Dany Sluijk <me@dany.dev>"]
 default-run = "akcontroller"
@@ -27,7 +27,9 @@ codegen-units = 1
 actix-web = "4.1.0"
 futures = "0.3.21"
 tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
-k8s-openapi = { version = "0.15.0", features = ["v1_22"], default-features = false }
+k8s-openapi = { version = "0.15.0", features = [
+    "v1_22",
+], default-features = false }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 chrono = { version = "0.4.19", features = ["serde"] }
