@@ -2,7 +2,11 @@
 extern crate tracing;
 
 use actix_web::{get, middleware, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use kube::Client;
+use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
+use kube::{
+    api::{Patch, PatchParams},
+    Api, Client, CustomResourceExt, ResourceExt,
+};
 use tracing_subscriber::{prelude::*, EnvFilter, Registry};
 
 use akcontroller::resources;
@@ -31,10 +35,35 @@ async fn main() -> Result<(), StartError> {
     .bind("0.0.0.0:8080")?
     .shutdown_timeout(5);
 
+    ensure_crds().await?;
+
     tokio::select! {
         _ = start_managers() => warn!("A manager exited"),
         _ = server.run() => info!("Actix Web exited"),
     }
+    Ok(())
+}
+
+async fn ensure_crds() -> Result<(), StartError> {
+    let crds = [
+        resources::authentik::crd::Authentik::crd(),
+        resources::authentik_group::crd::AuthentikGroup::crd(),
+        resources::authentik_user::crd::AuthentikUser::crd(),
+        resources::authentik_provider_oauth::crd::AuthentikOAuthProvider::crd(),
+    ];
+
+    let client = Client::try_default().await?;
+    let api: Api<CustomResourceDefinition> = Api::all(client);
+
+    for crd in crds {
+        api.patch(
+            &crd.name_any(),
+            &PatchParams::apply("ak-operator"),
+            &Patch::Apply(&crd),
+        )
+        .await?;
+    }
+
     Ok(())
 }
 
