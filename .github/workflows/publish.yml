@@ -1,11 +1,14 @@
 name: Docker Publish
+
 on:
   push:
     branches:
       - main
+    tags:
+      - "*"
   schedule:
     - cron: "55 3 2 * *"
-  workflow_dispatch:
+
 jobs:
   buildDockerImage:
     name: Build Docker image
@@ -28,6 +31,7 @@ jobs:
           images: ghcr.io/dsluijk/authentik-operator
           tags: |
             type=sha, prefix={{date 'X'}}-
+            type=ref, event=tag
             latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v2

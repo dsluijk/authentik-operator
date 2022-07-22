@@ -2,8 +2,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/dsluijk/authentik-operator
-  pullPolicy: Always
-  tag: latest
+  pullPolicy: IfNotPresent
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
