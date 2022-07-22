@@ -96,14 +96,22 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Find the group ID.
-    let mut groups = FindGroup::send(
+    let result = FindGroup::send(
         &ak,
         FindGroupBody {
             name: Some(service_group_name(&instance)),
             ..Default::default()
         },
     )
-    .await?;
+    .await;
+
+    let mut groups = match result {
+        Ok(groups) => groups,
+        Err(_) => {
+            warn!("Failed to get the groups, skipping deleting the service group.");
+            return Ok(());
+        }
+    };
 
     let group_id = match groups.pop() {
         Some(group) => group.pk,
@@ -117,12 +125,17 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     match DeleteGroup::send(&ak, group_id).await {
         Ok(_) => {
             info!("Deleted service group.");
-            Ok(())
         }
         Err(DeleteGroupError::NotFound) => {
             info!("Group was not found, so cannot delete it.");
-            Ok(())
         }
-        Err(e) => Err(e.into()),
-    }
+        Err(e) => {
+            warn!(
+                "Failed to delete service group, ignoring during deletion. ({})",
+                e
+            );
+        }
+    };
+
+    Ok(())
 }

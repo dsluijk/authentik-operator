@@ -119,9 +119,17 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
             ..Default::default()
         },
     )
-    .await?;
+    .await;
 
-    let user = match result.iter().find(|&user| &user.username == API_USER) {
+    let users = match result {
+        Ok(users) => users,
+        Err(_) => {
+            warn!("Failed to get the users, skipping deleting the operator user.");
+            return Ok(());
+        }
+    };
+
+    let user = match users.iter().find(|&user| &user.username == API_USER) {
         Some(user) => user,
         None => {
             return Ok(());
@@ -131,9 +139,15 @@ pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
     match DeleteAccount::send(&ak, user.pk).await {
         Ok(_) => {
             info!("Deleted operator user.");
-            Ok(())
         }
-        Err(DeleteAccountError::NotFound) => Ok(()),
-        Err(e) => Err(e.into()),
+        Err(DeleteAccountError::NotFound) => {}
+        Err(e) => {
+            warn!(
+                "Failed to delete the operator user. Ignoring this during uninstall ({}).",
+                e
+            );
+        }
     }
+
+    Ok(())
 }
