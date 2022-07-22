@@ -4,7 +4,7 @@ use k8s_openapi::api::{
     rbac::v1::{ClusterRole, ClusterRoleBinding},
 };
 use kube::{
-    api::{Patch, PatchParams},
+    api::{DeleteParams, Patch, PatchParams},
     Api, Client, ResourceExt,
 };
 use serde_json::json;
@@ -51,8 +51,22 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     Ok(())
 }
 
-pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
-    // Note: The account will automatically be cleaned up by Kubernetes.
+pub async fn cleanup(obj: &crd::Authentik, client: Client) -> Result<()> {
+    let instance = obj
+        .metadata
+        .name
+        .clone()
+        .ok_or(anyhow!("Missing instance name.".to_string()))?;
+
+    // Clean up cluster resources as owner references don't work.
+    let api: Api<ClusterRole> = Api::all(client.clone());
+    api.delete(&format!("ak-{}", &instance), &DeleteParams::foreground())
+        .await?;
+
+    let api: Api<ClusterRoleBinding> = Api::all(client.clone());
+    api.delete(&format!("ak-{}", &instance), &DeleteParams::foreground())
+        .await?;
+
     Ok(())
 }
 
@@ -81,13 +95,7 @@ fn build_clusterrole(name: String, obj: &crd::Authentik) -> Result<ClusterRole> 
         "kind": "ClusterRole",
         "metadata": {
             "name": format!("ak-{}", &name),
-            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string()),
-            "ownerReferences": [{
-                "apiVersion": "ak.dany.dev/v1",
-                "kind": "Authentik",
-                "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
-            }]
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string())
         },
         "rules": [
             {
@@ -132,13 +140,7 @@ fn build_binding(name: String, obj: &crd::Authentik, ns: &str) -> Result<Cluster
         "kind": "ClusterRoleBinding",
         "metadata": {
             "name": format!("ak-{}", &name),
-            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string()),
-            "ownerReferences": [{
-                "apiVersion": "ak.dany.dev/v1",
-                "kind": "Authentik",
-                "name": name,
-                "uid": obj.uid().expect("Failed to get UID of Authentik.")
-            }]
+            "labels": labels::get_labels(name.clone(), obj.spec.image.tag.to_string(), "clusteraccount".to_string())
         },
         "roleRef": {
             "apiGroup": "rbac.authorization.k8s.io",
