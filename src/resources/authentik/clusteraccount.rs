@@ -102,32 +102,32 @@ fn build_clusterrole(name: String, obj: &crd::Authentik) -> Result<ClusterRole> 
             {
                 "apiGroups": [""],
                 "resources": ["secrets", "services", "configmaps"],
-                "verbs": ["get", "create", "delete", "list", "patch"]
+                "verbs": ["*"]
             },
             {
                 "apiGroups": ["extensions", "apps"],
                 "resources": ["deployments"],
-                "verbs": ["get", "create", "delete", "list", "patch"]
+                "verbs": ["*"]
             },
             {
                 "apiGroups": ["extensions", "networking.k8s.io"],
                 "resources": ["ingresses"],
-                "verbs": ["get", "create", "delete", "list", "patch"]
+                "verbs": ["*"]
             },
             {
                 "apiGroups": ["traefik.containo.us"],
                 "resources": ["middlewares"],
-                "verbs": ["get", "create", "delete", "list", "patch"]
+                "verbs": ["*"]
             },
             {
                 "apiGroups": ["monitoring.coreos.com"],
                 "resources": ["servicemonitors"],
-                "verbs": ["get", "create", "delete", "list", "patch"]
+                "verbs": ["*"]
             },
             {
                 "apiGroups": ["apiextensions.k8s.io"],
                 "resources": ["customresourcedefinitions"],
-                "verbs": ["list"]
+                "verbs": ["*"]
             }
         ]
     }))?;
