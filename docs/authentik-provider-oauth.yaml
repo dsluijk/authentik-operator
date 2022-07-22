@@ -1,10 +1,10 @@
 apiVersion: ak.dany.dev/v1
 kind: AuthentikOAuthProvider
 metadata:
-  name: testing-provider
+  name: oauth-provider
 spec:
   authentikInstance: authentik
-  name: testing-provider
+  name: testoauthing-provider
   flow: default-provider-authorization-implicit-consent
   clientType: confidential
   scopes:
