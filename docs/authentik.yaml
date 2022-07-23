@@ -12,7 +12,6 @@ spec:
   redis:
     host: redis-master
   ingress:
-    className: nginx
     rules:
       - host: login.example.com
         paths:
