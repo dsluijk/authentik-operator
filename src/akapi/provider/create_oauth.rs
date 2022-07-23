@@ -4,7 +4,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 use crate::{
-    akapi::{types::Provider, AkApiRoute, AkClient},
+    akapi::{types::OAuthProvider, AkApiRoute, AkClient},
     resources::authentik_provider_oauth::crd,
 };
 
@@ -13,7 +13,7 @@ pub struct CreateOAuthProvider;
 #[async_trait]
 impl AkApiRoute for CreateOAuthProvider {
     type Body = CreateOAuthProviderBody;
-    type Response = Provider;
+    type Response = OAuthProvider;
     type Error = CreateOAuthProviderError;
 
     #[instrument]
@@ -26,7 +26,7 @@ impl AkApiRoute for CreateOAuthProvider {
 
         match res.status() {
             StatusCode::CREATED => {
-                let body: Provider = res.json().await?;
+                let body: OAuthProvider = res.json().await?;
 
                 Ok(body)
             }

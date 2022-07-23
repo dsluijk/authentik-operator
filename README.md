@@ -66,12 +66,13 @@ Click the link corresponding to the CRD you want to know more about to go there.
 Is your custom resource not in here?
 Open an issue!
 
-| CRD                                                        | Description                                                    |
-| ---------------------------------------------------------- | -------------------------------------------------------------- |
-| [Authentik](docs/authentik.md)                             | An instance of Authentik. This is required for any deployment. |
-| [AuthentikGroup](docs/authentik-group.md)                  | Group within Authentik. This can be a superuser group.         |
-| [AuthentikOAuthProvider](docs/authentik-provider-oauth.md) | Creates a OAuth 2.0 / OpenID provider.                         |
-| [AuthentikUser](docs/authentik-user.md)                    | Authentik user, as you are familiar with.                      |
+| CRD                                                        | Description                                                           |
+| ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| [Authentik](docs/authentik.md)                             | An instance of Authentik. This is required for any deployment.        |
+| [AuthentikApplication](docs/authentik-application.md)      | An external application which uses Authentik as an identity provider. |
+| [AuthentikGroup](docs/authentik-group.md)                  | Group within Authentik. This can be a superuser group.                |
+| [AuthentikOAuthProvider](docs/authentik-provider-oauth.md) | Creates a OAuth 2.0 / OpenID provider.                                |
+| [AuthentikUser](docs/authentik-user.md)                    | Authentik user, as you are familiar with.                             |
 
 ## Differences
 

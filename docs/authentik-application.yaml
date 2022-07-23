@@ -1,0 +1,17 @@
+apiVersion: ak.dany.dev/v1
+kind: AuthentikApplication
+metadata:
+  name: example-application
+spec:
+  authentikInstance: authentik
+  name: example
+  slug: example
+  provider: testing-provider
+  group: example-group
+  policyMode: any
+  ui:
+    newTab: false
+    url: https://example.com
+    icon: fa://fa-eye
+    description: This is the example application from the Authentik Operator
+    publisher: Authentik Operator

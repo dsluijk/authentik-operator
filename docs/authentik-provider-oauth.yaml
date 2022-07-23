@@ -4,7 +4,7 @@ metadata:
   name: oauth-provider
 spec:
   authentikInstance: authentik
-  name: testoauthing-provider
+  name: testing-provider
   flow: default-provider-authorization-implicit-consent
   clientType: confidential
   scopes:

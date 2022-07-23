@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+pub mod application;
 pub mod certificate;
 pub mod flow;
 pub mod group;

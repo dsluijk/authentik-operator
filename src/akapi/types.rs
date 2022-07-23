@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::resources::authentik_application::crd::PolicyMode;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct User {
     pub pk: usize,
@@ -40,12 +42,21 @@ pub struct Stage {
     pub component: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct Provider {
     pub pk: usize,
     pub name: String,
     pub authorization_flow: String,
-    pub property_mappings: Vec<String>,
+    pub property_mappings: Option<Vec<String>>,
+    pub component: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OAuthProvider {
+    pub pk: usize,
+    pub name: String,
+    pub authorization_flow: String,
+    pub property_mappings: Option<Vec<String>>,
     pub client_id: String,
     pub client_secret: String,
     pub signing_key: Option<String>,
@@ -76,4 +87,21 @@ pub struct Certificate {
     pub pk: String,
     pub name: String,
     pub cert_expiry: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq)]
+pub struct Application {
+    #[serde(skip_serializing)]
+    pub pk: String,
+    pub name: String,
+    pub slug: String,
+    pub provider: Option<usize>,
+    #[serde(skip_serializing)]
+    pub provider_obj: Option<Provider>,
+    pub open_in_new_tab: Option<bool>,
+    pub meta_launch_url: Option<String>,
+    pub meta_description: Option<String>,
+    pub meta_publisher: Option<String>,
+    pub policy_engine_mode: Option<PolicyMode>,
+    pub group: Option<String>,
 }

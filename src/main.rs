@@ -39,7 +39,7 @@ async fn main() -> Result<(), StartError> {
 
     tokio::select! {
         _ = start_managers() => warn!("A manager exited"),
-        _ = server.run() => info!("Actix Web exited"),
+        _ = server.run() => warn!("Actix Web exited"),
     }
     Ok(())
 }
@@ -47,6 +47,7 @@ async fn main() -> Result<(), StartError> {
 async fn ensure_crds() -> Result<(), StartError> {
     let crds = [
         resources::authentik::crd::Authentik::crd(),
+        resources::authentik_application::crd::AuthentikApplication::crd(),
         resources::authentik_group::crd::AuthentikGroup::crd(),
         resources::authentik_user::crd::AuthentikUser::crd(),
         resources::authentik_provider_oauth::crd::AuthentikOAuthProvider::crd(),
@@ -69,12 +70,14 @@ async fn ensure_crds() -> Result<(), StartError> {
 
 async fn start_managers() -> Result<(), StartError> {
     let authentik_mgr = resources::AuthentikManager::new(Client::try_default().await?);
+    let authentik_app_mgr = resources::AuthentikAppManager::new(Client::try_default().await?);
     let authentik_user_mgr = resources::AuthentikUserManager::new(Client::try_default().await?);
     let authentik_group_mgr = resources::AuthentikGroupManager::new(Client::try_default().await?);
     let authentik_oauth_mgr = resources::AuthentikOAuthManager::new(Client::try_default().await?);
 
     tokio::select! {
         _ = authentik_mgr => warn!("Authentik controller exited"),
+        _ = authentik_app_mgr => warn!("Authentik user controller exited"),
         _ = authentik_user_mgr => warn!("Authentik user controller exited"),
         _ = authentik_group_mgr => warn!("Authentik user controller exited"),
         _ = authentik_oauth_mgr => warn!("Authentik oauth provider controller exited"),

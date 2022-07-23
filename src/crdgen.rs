@@ -9,6 +9,11 @@ fn main() {
     );
     print!(
         "{}",
+        serde_yaml::to_string(&resources::authentik_application::crd::AuthentikApplication::crd())
+            .unwrap()
+    );
+    print!(
+        "{}",
         serde_yaml::to_string(&resources::authentik_user::crd::AuthentikUser::crd()).unwrap()
     );
     print!(
