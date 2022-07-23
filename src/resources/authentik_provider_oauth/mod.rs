@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
+use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Api, ListParams, ResourceExt},
     runtime::{self, controller::Action, finalizer},
@@ -11,12 +12,16 @@ use tokio::{sync::Mutex, time::Duration};
 
 mod controller;
 pub mod crd;
+mod labels;
 
 mod provider;
+mod secret;
 
 use controller::Controller;
 
 use crate::ReconcileError;
+
+use super::list_lp;
 
 pub struct Manager;
 
@@ -25,7 +30,11 @@ impl Manager {
         let ctrlr = Controller::new(client.clone());
         let users = Api::<crd::AuthentikOAuthProvider>::all(client.clone());
 
+        let secrets = Api::<Secret>::all(client.clone());
+        let lp = list_lp("ak-provider-oauth");
+
         let drainer = runtime::Controller::new(users, ListParams::default())
+            .owns(secrets, lp.clone())
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),

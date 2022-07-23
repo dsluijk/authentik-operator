@@ -11,6 +11,20 @@ To deploy a simple example:
 kubectl apply -f https://raw.githubusercontent.com/dsluijk/authentik-operator/main/docs/authentik-provider-oauth.yaml
 ```
 
+## Created Secret
+
+A secret is created with the data required for the client.
+This can be mounted to the external application to connect to the server.
+The secret is named by `ak-{AUTHENTIK_INSTANCE}-oauth-{PROVIDER_NAME}`.
+Note that there are no URIs in the secret, as the domain and slug is not directly known.
+
+| Key          | Description                                            |
+| ------------ | ------------------------------------------------------ |
+| clientType   | The type of client, can be `confidential` or `public`. |
+| clientId     | The client ID of the provider.                         |
+| clientSecret | The secret key of the client.                          |
+| redirectUris | A list of valid redirect URL's.                        |
+
 ## Reference
 
 A full example:

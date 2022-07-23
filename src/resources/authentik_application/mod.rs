@@ -23,9 +23,9 @@ pub struct Manager;
 impl Manager {
     pub fn new(client: Client) -> BoxFuture<'static, ()> {
         let ctrlr = Controller::new(client.clone());
-        let users = Api::<crd::AuthentikApplication>::all(client.clone());
+        let apps = Api::<crd::AuthentikApplication>::all(client.clone());
 
-        let drainer = runtime::Controller::new(users, ListParams::default())
+        let drainer = runtime::Controller::new(apps, ListParams::default())
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
                 move |e, _| Self::error_policy(e),

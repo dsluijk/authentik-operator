@@ -32,6 +32,8 @@ use controller::Controller;
 
 use crate::ReconcileError;
 
+use super::list_lp;
+
 pub struct Manager;
 
 impl Manager {
@@ -46,9 +48,7 @@ impl Manager {
         let serviceaccounts = Api::<ServiceAccount>::all(client.clone());
         let clusterroles = Api::<ClusterRole>::all(client.clone());
         let clusterrolebindings = Api::<ClusterRoleBinding>::all(client.clone());
-        let lp = ListParams::default().labels(
-            "app.kubernetes.io/created-by=authentik-operator,app.kubernetes.io/name=authentik,app.kubernetes.io/part-of=ak-ak",
-        );
+        let lp = list_lp("ak-ak");
 
         let drainer = runtime::Controller::new(servers, ListParams::default())
             .owns(deploys, lp.clone())

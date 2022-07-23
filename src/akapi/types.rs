@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::resources::authentik_application::crd::PolicyMode;
+use crate::resources::{
+    authentik_application::crd::PolicyMode,
+    authentik_provider_oauth::crd::{IssuerMode, SubjectMode},
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct User {
@@ -57,9 +60,16 @@ pub struct OAuthProvider {
     pub name: String,
     pub authorization_flow: String,
     pub property_mappings: Option<Vec<String>>,
-    pub client_id: String,
-    pub client_secret: String,
+    pub component: String,
+    pub assigned_application_name: Option<String>,
+    pub assigned_application_slug: Option<String>,
+    pub client_type: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
     pub signing_key: Option<String>,
+    pub redirect_uris: Option<String>,
+    pub sub_mode: Option<SubjectMode>,
+    pub issuer_mode: Option<IssuerMode>,
 }
 
 #[derive(Debug, Deserialize)]
