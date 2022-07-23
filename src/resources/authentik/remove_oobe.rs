@@ -4,7 +4,9 @@ use kube::{Client, ResourceExt};
 use crate::akapi::{
     auth::get_valid_token,
     flow::{DeleteFlow, DeleteFlowError},
+    group::{DeleteGroup, DeleteGroupError, FindGroup, FindGroupBody},
     stages::{DeleteStage, DeleteStageError, FindStage, FindStageBody},
+    user::{DeleteAccount, DeleteAccountError, Find, FindBody},
     AkApiRoute, AkClient,
 };
 
@@ -54,6 +56,49 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
             }
         }
         Err(e) => return Err(e.into()),
+    }
+
+    // Try to delete the `akadmin` user.
+    let users = Find::send(
+        &ak,
+        FindBody {
+            username: Some("akadmin".to_string()),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+    if let Some(user) = users.iter().find(|&user| user.username == "akadmin") {
+        match DeleteAccount::send(&ak, user.pk).await {
+            Ok(_) => {
+                info!("Deleted `akadmin` user.");
+            }
+            Err(DeleteAccountError::NotFound) => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+
+    // Try to delete the `authentik Admins` group.
+    let groups = FindGroup::send(
+        &ak,
+        FindGroupBody {
+            name: Some("authentik Admins".to_string()),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+    if let Some(group) = groups
+        .iter()
+        .find(|&group| group.name == "authentik Admins")
+    {
+        match DeleteGroup::send(&ak, group.pk.clone()).await {
+            Ok(_) => {
+                info!("Deleted `authentik Admins` group.");
+            }
+            Err(DeleteGroupError::NotFound) => {}
+            Err(e) => return Err(e.into()),
+        }
     }
 
     Ok(())
