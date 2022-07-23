@@ -55,7 +55,7 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
         })
         .collect::<Vec<serde_json::Value>>();
 
-    let rules: serde_json::Value = ing
+    let rules = ing
         .rules
         .iter()
         .map(|rule| {
@@ -77,7 +77,12 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
                 }
             })
         })
-        .collect();
+        .collect::<Vec<serde_json::Value>>();
+
+    // Convert empty rule lists to a None value.
+    // This is to prevent a weird issue where the ingress keep triggering new reconcilidations.
+    let tls = if !tls.is_empty() { Some(tls) } else { None };
+    let rules = if !rules.is_empty() { Some(rules) } else { None };
 
     let ingress: Ingress = serde_json::from_value(json!({
         "apiVersion": "networking.k8s.io/v1",
