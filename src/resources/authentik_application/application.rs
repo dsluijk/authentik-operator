@@ -73,7 +73,7 @@ pub async fn cleanup(obj: &crd::AuthentikApplication, client: Client) -> Result<
     let ak = AkClient::new(&api_key, &instance, &ns)?;
 
     // Delete the application.
-    match DeleteApplication::send(&ak, obj.spec.name.clone()).await {
+    match DeleteApplication::send(&ak, obj.spec.slug.clone()).await {
         Ok(_) => {
             info!("Deleted application `{}`.", obj.spec.name);
         }
