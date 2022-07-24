@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   authentik-operator:
   - apiVersion: v2
+    appVersion: 0.2.1
+    created: "2022-07-24T01:16:01.255811539Z"
+    description: Operator for the Authentik identity provider.
+    digest: 4bbd4b66a5668ff4522d80d6069d6477bcc52d4fc374a808dc8cae74dd5ca607
+    name: authentik-operator
+    type: application
+    urls:
+    - https://github.com/dsluijk/authentik-operator/releases/download/authentik-operator-0.2.1/authentik-operator-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
     appVersion: 0.2.0
     created: "2022-07-22T22:28:15.19665635Z"
     description: Operator for the Authentik identity provider.
@@ -51,4 +61,4 @@ entries:
     urls:
     - https://github.com/dsluijk/authentik-operator/releases/download/authentik-operator-0.1.0/authentik-operator-0.1.0.tgz
     version: 0.1.0
-generated: "2022-07-22T22:28:15.19667575Z"
+generated: "2022-07-24T01:16:01.255831039Z"
