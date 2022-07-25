@@ -26,8 +26,8 @@ pub struct AuthentikApplicationSpec {
     pub slug: String,
     #[validate(length(min = 1))]
     pub provider: String,
-    #[validate(length(min = 1))]
-    pub group: Option<String>,
+    #[serde(default)]
+    pub group: String,
     #[serde(default = "default_policy")]
     pub policy_mode: PolicyMode,
     #[serde(default)]

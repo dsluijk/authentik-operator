@@ -113,5 +113,5 @@ pub struct Application {
     pub meta_description: Option<String>,
     pub meta_publisher: Option<String>,
     pub policy_engine_mode: Option<PolicyMode>,
-    pub group: Option<String>,
+    pub group: String,
 }

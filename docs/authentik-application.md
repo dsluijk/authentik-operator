@@ -40,7 +40,7 @@ spec:
 | name              | True     |                 | The name of the application.                                                                  |
 | slug              | True     |                 | The slug used in internal urls. Do not change this afterwards.                                |
 | provider          | True     |                 | The provider to use with this application. This is the _name_ of the application, not the ID. |
-| group             | False    |                 | The name of the group of the application. Used to group applications together.                |
+| group             | False    | `""`            | The name of the group of the application. Used to group applications together.                |
 | policyMode        | False    | `"any"`         | Policy engine mode to use. Valid values: `any` and `all`.                                     |
 | ui.newTab         | False    | `false`         | When true, the application will be launched in a new tab when launched from the library.      |
 | ui.url            | False    |                 | The url to use when launching the application from the library.                               |
