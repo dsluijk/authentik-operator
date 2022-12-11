@@ -79,12 +79,11 @@ Open an issue!
 This operator changes some behavior compared to a "vanilla" installation of Authentik.
 The most notable of these are, in no particulair order:
 
--   The initial setup flow is deleted, along with the associated stage. Normally this is used in the `/if/flow/initial-setup/` page.
 -   The `akadmin` user is deleted, along with the `authentik Admins` group.
 -   A group `akOperator authentik service group` is created. **Do not delete this group**.
 -   A service account `ak-operator` is created. **Also do not delete this**.
 -   An `ak-operator-authentik__operatortoken` api token is created. You get it now, **don't delete this**.
--   An hardcoded bootstrap token is added, but removed soon after.
+-   An hardcoded bootstrap token is added, but removed soon after initial start.
 
 ## Development
 

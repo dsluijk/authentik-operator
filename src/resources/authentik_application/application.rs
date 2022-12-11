@@ -42,10 +42,10 @@ pub async fn reconcile(obj: &crd::AuthentikApplication, client: Client) -> Resul
             obj.name_any()
         ))?;
 
+    let new_app = build_application(obj.spec.clone(), &provider);
     // Get the application, create or patch depending on if it exists.
     match GetApplication::send(&ak, obj.spec.slug.clone()).await? {
         Some(app) => {
-            let new_app = build_application(obj.spec.clone(), &provider);
             // Compare the serialized versions of the applications.
             // The non-serialized object contains values we don't care about, and can conflict.
             if serde_json::to_string(&app)? != serde_json::to_string(&new_app)? {
@@ -54,8 +54,7 @@ pub async fn reconcile(obj: &crd::AuthentikApplication, client: Client) -> Resul
             }
         }
         None => {
-            let body = build_application(obj.spec.clone(), &provider);
-            CreateApplication::send(&ak, body).await?;
+            CreateApplication::send(&ak, new_app).await?;
         }
     };
 

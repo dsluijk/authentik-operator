@@ -4,24 +4,24 @@ use thiserror::Error;
 
 use crate::akapi::{types::OAuthProvider, AkApiRoute, AkClient};
 
-pub struct CreateOAuthProvider;
+pub struct PatchOAuthProvider;
 
 #[async_trait]
-impl AkApiRoute for CreateOAuthProvider {
+impl AkApiRoute for PatchOAuthProvider {
     type Body = OAuthProvider;
     type Response = OAuthProvider;
-    type Error = CreateOAuthProviderError;
+    type Error = PatchOAuthProviderError;
 
     #[instrument]
     async fn send(ak: &AkClient, body: Self::Body) -> Result<Self::Response, Self::Error> {
         let res = ak
-            .post("/api/v3/providers/oauth2/")
+            .patch(&format!("/api/v3/providers/oauth2/{}/", body.pk))
             .json(&body)
             .send()
             .await?;
 
         match res.status() {
-            StatusCode::CREATED => {
+            StatusCode::OK => {
                 let body: OAuthProvider = res.json().await?;
 
                 Ok(body)
@@ -35,7 +35,7 @@ impl AkApiRoute for CreateOAuthProvider {
 }
 
 #[derive(Error, Debug)]
-pub enum CreateOAuthProviderError {
+pub enum PatchOAuthProviderError {
     #[error("An unknown error occured ({0}).")]
     Unknown(String),
     #[error("Failed to send HTTP request: {0}")]
