@@ -1,4 +1,5 @@
 use kube::CustomResource;
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +20,10 @@ pub struct AuthentikOAuthProviderSpec {
     #[validate(length(min = 1))]
     pub flow: String,
     pub client_type: ClientType,
+    #[serde(default = "default_client_id")]
+    pub client_id: String,
+    #[serde(default = "default_client_secret")]
+    pub client_secret: String,
     pub scopes: Vec<String>,
     #[validate(length(min = 1))]
     pub redirect_uris: Vec<String>,
@@ -60,6 +65,22 @@ pub enum IssuerMode {
 }
 
 // -- Default value functions from here on.
+fn default_client_id() -> String {
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(255)
+        .map(char::from)
+        .collect()
+}
+
+fn default_client_secret() -> String {
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(255)
+        .map(char::from)
+        .collect()
+}
+
 fn default_access_code_validity() -> String {
     "minutes=1".to_string()
 }

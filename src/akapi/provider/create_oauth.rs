@@ -44,6 +44,8 @@ pub struct CreateOAuthProviderBody {
     pub authorization_flow: String,
     pub property_mappings: Vec<String>,
     pub client_type: crd::ClientType,
+    pub client_id: String,
+    pub client_secret: String,
     pub access_code_validity: String,
     pub token_validity: String,
     pub include_claims_in_id_token: bool,

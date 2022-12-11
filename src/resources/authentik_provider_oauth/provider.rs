@@ -97,6 +97,8 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
             authorization_flow: flow.pk,
             property_mappings: scopes,
             client_type: obj.spec.client_type.clone(),
+            client_id: obj.spec.client_id.clone(),
+            client_secret: obj.spec.client_secret.clone(),
             include_claims_in_id_token: obj.spec.claims_in_token,
             redirect_uris: obj.spec.redirect_uris.join("\n"),
             access_code_validity: obj.spec.access_code_validity.clone(),
