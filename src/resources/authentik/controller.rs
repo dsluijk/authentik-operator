@@ -11,8 +11,7 @@ use serde_json::{json, Map};
 use tokio::time::Duration;
 
 use super::{
-    clusteraccount, crd, deployment, ingress, remove_oobe, secret, service, serviceaccount,
-    servicegroup,
+    clusteraccount, crd, deployment, ingress, secret, service, serviceaccount, servicegroup,
 };
 
 pub struct Controller {
@@ -49,7 +48,6 @@ impl Controller {
         serviceaccount::reconcile(&obj, self.client.clone()).await?;
         servicegroup::reconcile(&obj, self.client.clone()).await?;
         secret::reconcile(&obj, self.client.clone()).await?;
-        remove_oobe::reconcile(&obj, self.client.clone()).await?;
 
         info!("Reconcilidation of Authentik finished successfully, re-queued for 30 minutes.");
         Ok(Action::requeue(Duration::from_secs(30 * 60)))
@@ -57,7 +55,6 @@ impl Controller {
 
     pub async fn cleanup(&self, obj: Arc<crd::Authentik>) -> Result<Action> {
         // Cleanup all parts.
-        remove_oobe::cleanup(obj.as_ref(), self.client.clone()).await?;
         secret::cleanup(obj.as_ref(), self.client.clone()).await?;
         servicegroup::cleanup(obj.as_ref(), self.client.clone()).await?;
         serviceaccount::cleanup(obj.as_ref(), self.client.clone()).await?;
