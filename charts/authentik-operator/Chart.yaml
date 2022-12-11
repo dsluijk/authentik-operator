@@ -3,5 +3,5 @@ name: authentik-operator
 description: Operator for the Authentik identity provider.
 
 type: application
-version: 0.2.3
-appVersion: "0.2.3"
+version: 0.2.4
+appVersion: "0.2.4"
