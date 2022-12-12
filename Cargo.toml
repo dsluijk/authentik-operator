@@ -27,15 +27,12 @@ codegen-units = 1
 actix-web = "4.1.0"
 futures = "0.3.21"
 tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
-k8s-openapi = { version = "0.15.0", features = [
-    "v1_22",
-], default-features = false }
+k8s-openapi = { version = "0.16.0", features = ["v1_24"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 chrono = { version = "0.4.19", features = ["serde"] }
 schemars = { version = "0.8.8", features = ["chrono"] }
-serde_yaml = "0.8.23"
-tonic = { version = "0.7.2", optional = true }
+serde_yaml = "0.9.14"
 thiserror = "1.0.31"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.14", features = ["json", "env-filter"] }
@@ -48,4 +45,4 @@ regex = "1.6.0"
 
 [dependencies.kube]
 features = ["runtime", "client", "derive"]
-version = "0.74.0"
+version = "0.76.0"

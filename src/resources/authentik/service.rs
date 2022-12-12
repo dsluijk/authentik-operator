@@ -4,7 +4,7 @@ use kube::{
     api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use super::{crd, labels};
 
@@ -22,7 +22,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &format!("authentik-{}", instance),
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build(instance.clone(), obj)?),
+        &Patch::Apply(&build(instance.clone(), obj)),
     )
     .await?;
 
@@ -33,8 +33,8 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik) -> Result<Service> {
-    let service: Service = serde_json::from_value(json!({
+fn build(name: String, obj: &crd::Authentik) -> Value {
+    json!({
         "apiVersion": "v1",
         "kind": "Service",
         "metadata": {
@@ -58,7 +58,5 @@ fn build(name: String, obj: &crd::Authentik) -> Result<Service> {
             }],
             "selector": labels::get_matching_labels(name.clone(), "server".to_string())
         }
-    }))?;
-
-    Ok(service)
+    })
 }

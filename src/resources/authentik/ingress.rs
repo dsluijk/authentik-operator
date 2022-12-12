@@ -4,7 +4,7 @@ use kube::{
     api::{DeleteParams, Patch, PatchParams},
     Api, Client, ResourceExt,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use super::{crd, labels};
 
@@ -26,7 +26,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         api.patch(
             &format!("authentik-{}", instance),
             &PatchParams::apply("authentik.ak-operator"),
-            &Patch::Apply(&build(instance.clone(), obj, ing)?),
+            &Patch::Apply(&build(instance.clone(), obj, ing)),
         )
         .await?;
     } else {
@@ -43,7 +43,7 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Result<Ingress> {
+fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Value {
     let tls = ing
         .tls
         .iter()
@@ -84,7 +84,7 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
     let tls = if !tls.is_empty() { Some(tls) } else { None };
     let rules = if !rules.is_empty() { Some(rules) } else { None };
 
-    let ingress: Ingress = serde_json::from_value(json!({
+    json!({
         "apiVersion": "networking.k8s.io/v1",
         "kind": "Ingress",
         "metadata": {
@@ -103,7 +103,5 @@ fn build(name: String, obj: &crd::Authentik, ing: &crd::AuthentikIngress) -> Res
             "rules": rules,
             "tls": tls,
         }
-    }))?;
-
-    Ok(ingress)
+    })
 }

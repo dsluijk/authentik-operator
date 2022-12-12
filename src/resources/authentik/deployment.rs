@@ -7,7 +7,7 @@ use kube::{
     api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::akapi::auth::TEMP_AUTH_TOKEN;
 
@@ -28,7 +28,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &format!("authentik-{}-server", instance),
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build_server(instance.clone(), obj)?),
+        &Patch::Apply(&build_server(instance.clone(), obj)),
     )
     .await?;
 
@@ -37,7 +37,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &format!("authentik-{}-worker", instance),
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build_worker(instance.clone(), obj)?),
+        &Patch::Apply(&build_worker(instance.clone(), obj)),
     )
     .await?;
 
@@ -48,8 +48,8 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build_server(name: String, obj: &crd::Authentik) -> Result<Deployment> {
-    let deployment: Deployment = serde_json::from_value(json!({
+fn build_server(name: String, obj: &crd::Authentik) -> Value {
+    json!({
         "apiVersion": "apps/v1",
         "kind": "Deployment",
         "metadata": {
@@ -114,13 +114,11 @@ fn build_server(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                 }
             }
         }
-    }))?;
-
-    Ok(deployment)
+    })
 }
 
-fn build_worker(name: String, obj: &crd::Authentik) -> Result<Deployment> {
-    let deployment: Deployment = serde_json::from_value(json!({
+fn build_worker(name: String, obj: &crd::Authentik) -> Value {
+    json!({
         "apiVersion": "apps/v1",
         "kind": "Deployment",
         "metadata": {
@@ -156,9 +154,7 @@ fn build_worker(name: String, obj: &crd::Authentik) -> Result<Deployment> {
                 }
             }
         }
-    }))?;
-
-    Ok(deployment)
+    })
 }
 
 fn build_env(obj: &crd::AuthentikSpec) -> Vec<EnvVar> {

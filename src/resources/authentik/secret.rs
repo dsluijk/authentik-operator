@@ -4,7 +4,7 @@ use kube::{
     api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::akapi::{
     auth::{get_valid_secret_token, get_valid_token},
@@ -46,7 +46,7 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     api.patch(
         &name,
         &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build(instance.clone(), obj, token)?),
+        &Patch::Apply(&build(instance.clone(), obj, token)),
     )
     .await?;
 
@@ -58,8 +58,8 @@ pub async fn cleanup(_obj: &crd::Authentik, _client: Client) -> Result<()> {
     Ok(())
 }
 
-fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
-    let secret: Secret = serde_json::from_value(json!({
+fn build(name: String, obj: &crd::Authentik, token: String) -> Value {
+    json!({
         "apiVersion": "v1",
         "kind": "Secret",
         "type": "Opaque",
@@ -77,7 +77,5 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Result<Secret> {
         "stringData": {
             "token": token
         }
-    }))?;
-
-    Ok(secret)
+    })
 }

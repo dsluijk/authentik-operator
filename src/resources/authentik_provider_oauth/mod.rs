@@ -37,7 +37,7 @@ impl Manager {
             .owns(secrets, lp.clone())
             .run(
                 move |obj, controller| Self::reconcile(obj, controller, client.clone()),
-                move |e, _| Self::error_policy(e),
+                move |_, e, _| Self::error_policy(e),
                 Arc::new(Mutex::new(ctrlr)),
             )
             .filter_map(|x| async move { Result::ok(x) })
