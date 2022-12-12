@@ -39,6 +39,8 @@ spec:
     name: oauth-provider
     flow: default-provider-authorization-implicit-consent
     clientType: confidential
+    clientId: CLIENT_ID
+    clientSecret: CLIENT_SECRET
     scopes:
         - "authentik default OAuth Mapping: OpenID 'email'"
         - "authentik default OAuth Mapping: OpenID 'openid'"
@@ -59,6 +61,8 @@ spec:
 | name               | True     |                  | The name of the provider.                                                                   |
 | flow               | True     |                  | The authorization flow to be used in this provider. Note that this is the name of the flow. |
 | clientType         | True     |                  | The client type, can be either `confidential` or `public`.                                  |
+| clientId           | False    |                  | The client ID of the provider, will be randomly generated if not provided.                  |
+| clientSecret       | False    |                  | The client secret of the provider, will be randomly generated if not provided.              |
 | scopes[]           | True     |                  | A list of scopes which can be used by the client. Provide the name of the scope.            |
 | redirectUris[]     | True     |                  | A list of valid redirect values.                                                            |
 | accessCodeValidity | False    | `minutes=1`      | Duration of the validity of generated access codes.                                         |
