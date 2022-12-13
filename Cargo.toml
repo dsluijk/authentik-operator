@@ -1,6 +1,6 @@
 [package]
 name = "authentik-operator"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 authors = ["Dany Sluijk <me@dany.dev>"]
 default-run = "akcontroller"
