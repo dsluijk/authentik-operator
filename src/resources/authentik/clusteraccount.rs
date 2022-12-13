@@ -25,8 +25,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let api: Api<ServiceAccount> = Api::namespaced(client.clone(), &ns);
     api.patch(
         &format!("ak-{}", &instance),
-        &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build_serviceaccount(instance.clone(), obj)),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(build_serviceaccount(instance.clone(), obj)),
     )
     .await?;
 
@@ -34,8 +34,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let api: Api<ClusterRole> = Api::all(client.clone());
     api.patch(
         &format!("ak-{}", &instance),
-        &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build_clusterrole(instance.clone(), obj)),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(build_clusterrole(instance.clone(), obj)),
     )
     .await?;
 
@@ -43,8 +43,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let api: Api<ClusterRoleBinding> = Api::all(client.clone());
     api.patch(
         &format!("ak-{}", &instance),
-        &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build_binding(instance.clone(), obj, &ns)),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(build_binding(instance.clone(), obj, &ns)),
     )
     .await?;
 

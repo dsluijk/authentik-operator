@@ -25,8 +25,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
         // Create or update the ingress.
         api.patch(
             &format!("authentik-{}", instance),
-            &PatchParams::apply("authentik.ak-operator"),
-            &Patch::Apply(&build(instance.clone(), obj, ing)),
+            &PatchParams::apply("authentik.ak-operator").force(),
+            &Patch::Apply(build(instance.clone(), obj, ing)),
         )
         .await?;
     } else {

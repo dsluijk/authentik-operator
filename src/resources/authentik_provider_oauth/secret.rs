@@ -45,8 +45,8 @@ pub async fn reconcile(obj: &crd::AuthentikOAuthProvider, client: Client) -> Res
     secret_api
         .patch(
             &secret_name,
-            &PatchParams::apply("authentik.ak-operator"),
-            &Patch::Apply(&build(obj, &secret_name, provider)),
+            &PatchParams::apply("authentik.ak-operator").force(),
+            &Patch::Apply(build(obj, &secret_name, provider)),
         )
         .await?;
 

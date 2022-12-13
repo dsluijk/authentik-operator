@@ -45,8 +45,8 @@ pub async fn reconcile(obj: &crd::Authentik, client: Client) -> Result<()> {
     let name = format!("ak-{}-api-operatortoken", instance);
     api.patch(
         &name,
-        &PatchParams::apply("authentik.ak-operator"),
-        &Patch::Apply(&build(instance.clone(), obj, token)),
+        &PatchParams::apply("authentik.ak-operator").force(),
+        &Patch::Apply(build(instance.clone(), obj, token)),
     )
     .await?;
 

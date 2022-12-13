@@ -59,8 +59,8 @@ async fn ensure_crds() -> Result<(), StartError> {
     for crd in crds {
         api.patch(
             &crd.name_any(),
-            &PatchParams::apply("ak-operator"),
-            &Patch::Apply(&crd),
+            &PatchParams::apply("ak-operator").force(),
+            &Patch::Apply(crd),
         )
         .await?;
     }
