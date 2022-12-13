@@ -42,6 +42,7 @@ anyhow = "1.0.58"
 reqwest = { version = "0.11.11", features = ["json"] }
 lazy_static = "1.4.0"
 regex = "1.6.0"
+base64 = "0.20.0"
 
 [dependencies.kube]
 features = ["runtime", "client", "derive"]

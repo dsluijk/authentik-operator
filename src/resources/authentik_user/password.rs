@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use base64::encode;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{api::PostParams, Api, Client, ResourceExt};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
@@ -103,10 +104,10 @@ fn build(name: String, obj: &crd::AuthentikUser, password: String) -> Result<Sec
                 "controller": true,
             }]
         },
-        "stringData": {
-            "username": obj.spec.username,
-            "email": obj.spec.email,
-            "password": password
+        "data": {
+            "username": encode(obj.spec.username.clone()),
+            "email": encode(obj.spec.email.clone().unwrap_or("".to_string())),
+            "password": encode(password)
         }
     }))?;
 

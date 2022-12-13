@@ -45,6 +45,15 @@ pub enum ClientType {
     Public,
 }
 
+impl ToString for ClientType {
+    fn to_string(&self) -> String {
+        match self {
+            ClientType::Confidential => "confidential".to_string(),
+            ClientType::Public => "public".to_string(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum SubjectMode {

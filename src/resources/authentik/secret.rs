@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use base64::encode;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Patch, PatchParams},
@@ -74,8 +75,8 @@ fn build(name: String, obj: &crd::Authentik, token: String) -> Value {
                 "controller": true,
             }]
         },
-        "stringData": {
-            "token": token
+        "data": {
+            "token": encode(token)
         }
     })
 }

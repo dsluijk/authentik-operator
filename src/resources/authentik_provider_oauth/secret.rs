@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use base64::encode;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Patch, PatchParams},
@@ -66,6 +67,27 @@ fn build(obj: &crd::AuthentikOAuthProvider, secret_name: &str, provider: &OAuthP
         "secret".to_string(),
     );
 
+    let client_type = provider
+        .client_type
+        .as_ref()
+        .map(|c| encode(c.to_string()))
+        .unwrap_or("".to_string());
+    let client_id = provider
+        .client_id
+        .as_ref()
+        .map(|c| encode(c))
+        .unwrap_or("".to_string());
+    let client_secret = provider
+        .client_secret
+        .as_ref()
+        .map(|c| encode(c))
+        .unwrap_or("".to_string());
+    let redirect_uris = provider
+        .redirect_uris
+        .as_ref()
+        .map(|c| encode(c))
+        .unwrap_or("".to_string());
+
     json!({
         "apiVersion": "v1",
         "kind": "Secret",
@@ -81,11 +103,11 @@ fn build(obj: &crd::AuthentikOAuthProvider, secret_name: &str, provider: &OAuthP
                 "controller": true,
             }]
         },
-        "stringData": {
-            "clientType": provider.client_type,
-            "clientId": provider.client_id,
-            "clientSecret": provider.client_secret,
-            "redirectUris": provider.redirect_uris
+        "data": {
+            "clientType": client_type,
+            "clientId": client_id,
+            "clientSecret": client_secret,
+            "redirectUris": redirect_uris
         }
     })
 }
